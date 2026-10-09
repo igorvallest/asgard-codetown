@@ -19,6 +19,8 @@ export interface SubagentMeta {
   spawnDepth?: number;
   requestShape?: string;
   workflowPhase?: string;
+  /** Teammate (Agent com `name`): não termina no fim do turno, fica esperando mensagens. */
+  teammate?: boolean;
 }
 
 /** Sem escrita há 5 s depois de um end_turn: concluiu. */
@@ -82,6 +84,7 @@ export function parseSubagentMeta(raw: string): SubagentMeta | undefined {
     if (typeof j.spawnDepth === 'number') meta.spawnDepth = j.spawnDepth;
     if (requestShape) meta.requestShape = requestShape;
     if (workflowPhase) meta.workflowPhase = workflowPhase;
+    if (j.taskKind === 'in_process_teammate') meta.teammate = true;
     return meta;
   } catch {
     return undefined;

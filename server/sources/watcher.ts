@@ -19,6 +19,7 @@ import type { AgentSource } from './source';
 import {
   BOOT_RECENT_MS,
   concludedByIdle,
+  END_TURN_QUIET_MS,
   PENDING_TOOL_TIMEOUT_MS,
   listSubagentFiles,
   parseJournal,
@@ -576,6 +577,11 @@ export class ClaudeWatcher implements AgentSource {
         t.launched.set(sig.toolUseId, { agentId: sig.agentId, runId: sig.runId });
         if (sig.taskId) t.taskToTool.set(sig.taskId, sig.toolUseId);
         if (sig.runId) t.runToTool.set(sig.runId, sig.toolUseId);
+        // Teammate não tem task id: o TaskStop chega com o nome dele (ou o id do agente).
+        if (sig.teammate) {
+          t.taskToTool.set(sig.teammate, sig.toolUseId);
+          if (sig.agentId) t.taskToTool.set(sig.agentId, sig.toolUseId);
+        }
         return;
       case 'finished':
         this.finishTool(t, sig.toolUseId);
@@ -736,7 +742,7 @@ export class ClaudeWatcher implements AgentSource {
     }
     const finished =
       this.isFinished(t, file, meta) ||
-      (mode !== 'new' && concludedByIdle({ now, lastWriteAt: tail.mtimeMs, ended: state.ended, pendingTool: state.pendingTools.size > 0 }));
+      (mode !== 'new' && !meta?.teammate && concludedByIdle({ now, lastWriteAt: tail.mtimeMs, ended: state.ended, pendingTool: state.pendingTools.size > 0 }));
     if (finished) {
       t.known.set(file.path, tail.size);
       return;
@@ -814,8 +820,16 @@ export class ClaudeWatcher implements AgentSource {
         }
         continue;
       }
+      const finished = this.isFinished(t, sub.file, sub.meta);
+      if (sub.meta?.teammate && !finished) {
+        // Teammate não conclui no fim do turno: fica à toa no escritório esperando mensagem,
+        // até ser encerrado (TaskStop) ou a sessão fechar.
+        const idle = sub.state.ended && now - sub.tail.mtimeMs >= END_TURN_QUIET_MS;
+        office.setStatus(sub.id, idle ? 'idle' : 'working');
+        continue;
+      }
       const done =
-        this.isFinished(t, sub.file, sub.meta) ||
+        finished ||
         concludedByIdle({ now, lastWriteAt: sub.tail.mtimeMs, ended: sub.state.ended, pendingTool: sub.state.pendingTools.size > 0 });
       if (done) {
         office.completeSub(sub.id);
