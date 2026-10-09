@@ -3,11 +3,10 @@
 import type { AgentInfo, OfficeSnapshot, Provider, RoomInfo } from '../../../../shared/types';
 import type { ArtModule, Dir, RoomTheme } from '../../art/api';
 import type { WorldOptions } from '../api';
-import { COL_W, COMPACT_DELAY_MS, DISMANTLE_DELAY_MS, FOOT_DX, FOOT_DY, MISSING_DEBOUNCE_MS, RUN_SPEED, TILE, WALK_SPEED } from '../constants';
-import { assembleBuilding, type BuildingLayout } from '../layout/building';
-import { RECEPTION_ID } from '../layout/core';
-import { columnsFor, inRect } from '../layout/geometry';
-import { layoutProjectRoom } from '../layout/room';
+import { COMPACT_DELAY_MS, DISMANTLE_DELAY_MS, FOOT_DX, FOOT_DY, MISSING_DEBOUNCE_MS, RUN_SPEED, TILE, WALK_SPEED } from '../constants';
+import type { BuildingLayout } from '../layout/building';
+import { inRect } from '../layout/geometry';
+import { officePlan, type BuildingPlan } from '../layout/plan';
 import type { SpotDef, SpotKind } from '../layout/types';
 import { PathFinder } from '../path/astar';
 import { BLOCKED, FREE, SEAT } from '../path/grid';
@@ -115,14 +114,18 @@ export class Sim {
   private shrinkPending = false;
   private nextHousekeeping = 0;
 
-  /** `storage` das carteiras: null = só em memória (o timelapse não mexe nas moedinhas de verdade). */
+  /**
+   * `storage` das carteiras: null = só em memória (o timelapse não mexe nas moedinhas de verdade).
+   * `plan` = a planta do prédio, que vem do tema.
+   */
   constructor(
     private readonly art: ArtModule,
     private readonly options: () => WorldOptions,
     storage: StorageLike | null = browserStorage(),
+    readonly plan: BuildingPlan = officePlan,
   ) {
     this.social = new Social(this, storage);
-    this.building = assembleBuilding(columnsFor([]), [], 0);
+    this.building = plan.assemble(plan.extentFor([]), [], 0);
     this.finder = new PathFinder(this.building.grid);
     this.spots.setSpots(this.building.spots);
     for (const s of this.spots.ofKind('elevator')) this.elevators.push(new Elevator(this.elevators.length, s.id));
@@ -228,7 +231,7 @@ export class Sim {
     }
     // a primeira vaga livre do prédio (o slot do servidor só dá a ordem de chegada)
     const slot = this.freeSlot();
-    const layout = layoutProjectRoom({ id: r.id, slot, seed: r.seed }, theme);
+    const layout = this.plan.room({ id: r.id, slot, seed: r.seed }, theme);
     const rs = new RoomState(r, theme, layout, first ? 'ready' : 'building', now, first, slot);
     this.rooms.set(r.id, rs);
     return rs;
@@ -479,17 +482,20 @@ export class Sim {
   /** Recalcula o prédio (largura, grade, spots) a partir das salas presentes. */
   relayout(force = false): void {
     const present = [...this.rooms.values()].filter((r) => r.present);
-    let cols = columnsFor(present.map((r) => r.slot));
+    let cols = this.plan.extentFor(present.map((r) => r.slot));
     const cur = this.building.cols;
     if (cols < cur && !force) {
-      // só encolhe quando ninguém está na faixa que vai sumir
-      const limit = cols * COL_W * TILE;
-      if ([...this.chars.values()].some((c) => !c.gone && c.x >= limit - TILE)) {
+      // só encolhe quando ninguém está na faixa que vai sumir (a leste no Escritório; abaixo, se o prédio cresce para baixo)
+      const was = this.plan.rectFor(cur);
+      const next = this.plan.rectFor(cols);
+      const goneX = next.x + next.w < was.x + was.w ? (next.x + next.w) * TILE - TILE : Infinity;
+      const goneY = next.y + next.h < was.y + was.h ? (next.y + next.h) * TILE - TILE : Infinity;
+      if ([...this.chars.values()].some((c) => !c.gone && (c.x >= goneX || c.y >= goneY))) {
         cols = cur;
         this.shrinkPending = true;
       } else this.shrinkPending = false;
     } else this.shrinkPending = false;
-    const building = assembleBuilding(
+    const building = this.plan.assemble(
       cols,
       present.map((r) => r.layout),
       this.layoutVersion + 1,
@@ -630,7 +636,7 @@ export class Sim {
   moveRoom(room: RoomState, slot: number, now: number): void {
     const before = room.layout;
     const ghostId = `${room.id}#mudança${++this.moveSeq}`;
-    const ghostLayout = layoutProjectRoom({ id: ghostId, slot: room.slot, seed: room.seed }, room.theme);
+    const ghostLayout = this.plan.room({ id: ghostId, slot: room.slot, seed: room.seed }, room.theme);
     const ghost = new RoomState({ ...room.info, id: ghostId, seed: room.seed }, room.theme, ghostLayout, 'ready', now, false, room.slot);
     ghost.ghost = true;
     ghost.listed = false;
@@ -646,7 +652,7 @@ export class Sim {
     });
 
     room.slot = slot;
-    room.layout = layoutProjectRoom({ id: room.id, slot, seed: room.seed }, room.theme);
+    room.layout = this.plan.room({ id: room.id, slot, seed: room.seed }, room.theme);
     room.setPhase('building', now);
     room.lightOn = false;
     room.lightAt = -1e9;
@@ -1282,7 +1288,7 @@ export class Sim {
   }
 
   private lobbyTile(ch: Character): { x: number; y: number } {
-    const reception = this.building.core.find((a) => a.id === RECEPTION_ID)!;
+    const reception = this.building.core.find((a) => a.id === this.plan.roles.lobby)!;
     const r = reception.rect;
     for (let k = 0; k < 20; k++) {
       const x = r.x + 2 + Math.floor(ch.rng() * 12);

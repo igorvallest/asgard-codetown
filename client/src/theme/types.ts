@@ -1,5 +1,6 @@
 // Formato de tema: a cara do escritório num só lugar, trocável sem mexer no mundo nem na UI.
 import type { ArtModule } from '../art/api';
+import type { BuildingPlan } from '../world/layout/plan';
 
 /** Cores dos painéis que um tema pode trocar: as variáveis --ui-* de .ui-root em ui/styles.css. */
 export type UiVar =
@@ -22,6 +23,8 @@ export interface Theme {
   name: string;
   /** Toda a arte do mundo e dos avatares: pisos, paredes, móveis, personagens, ícones, telas e paletas das salas. */
   art: ArtModule;
+  /** Planta do prédio: áreas fixas, onde ficam as salas de projeto, exterior e o papel de cada área. */
+  building: BuildingPlan;
   /** Cores dos painéis; o que faltar fica como em ui/styles.css. */
   ui?: Partial<Record<UiVar, string>>;
 }

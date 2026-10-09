@@ -65,12 +65,6 @@ describe('preferências', () => {
     expect(sanitizePrefs({ dayNight: true }).daylight).toBe('auto');
     expect(sanitizePrefs({ dayNight: false, daylight: 'night' }).daylight).toBe('night');
   });
-  it('tema: id registrado fica; desconhecido ou inválido volta ao padrão', () => {
-    expect(DEFAULT_PREFS.theme).toBe('escritorio');
-    expect(sanitizePrefs({ theme: 'escritorio' }).theme).toBe('escritorio');
-    expect(sanitizePrefs({ theme: 'valhalla' }).theme).toBe('escritorio');
-    expect(sanitizePrefs({ theme: 42 }).theme).toBe('escritorio');
-  });
   it('sons: desligados por padrão; volume e categorias validados', () => {
     expect(DEFAULT_PREFS.sound).toBe(false);
     const p = sanitizePrefs({ sound: true, sounds: { volume: 3, keys: false, elevator: 'sim' } });

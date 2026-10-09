@@ -1,6 +1,7 @@
-// Temas: registro, escolha (preferência ou ?tema= na URL) e o tema ativo, definido uma vez ao abrir a página.
-// Trocar de tema recarrega a página: os sprites ficam em cache dentro de cada módulo de arte.
+// Temas: registro, escolha (o tema do servidor, HABBLAUD_TEMA, ou ?tema= na URL para testar o visual) e o tema
+// ativo, definido uma vez ao abrir a página: os sprites ficam em cache dentro de cada módulo de arte.
 import type { ArtModule } from '../art/api';
+import type { BuildingPlan } from '../world/layout/plan';
 import { escritorio } from './escritorio';
 import type { Theme } from './types';
 
@@ -14,14 +15,17 @@ export function themeById(id: string | null | undefined, themes: readonly Theme[
   return id ? themes.find((t) => t.id === id) : undefined;
 }
 
-/** ?tema=<id> na URL vence a preferência; id desconhecido é ignorado e, sem nenhum válido, vale o padrão. */
-export function resolveTheme(prefId: string | undefined, search = '', themes: readonly Theme[] = THEMES): Theme {
-  return themeById(new URLSearchParams(search).get('tema'), themes) ?? themeById(prefId, themes) ?? themes[0];
+/** ?tema=<id> na URL vence o tema do servidor; id desconhecido é ignorado e, sem nenhum válido, vale o padrão. */
+export function resolveTheme(serverId: string | undefined, search = '', themes: readonly Theme[] = THEMES): Theme {
+  return themeById(new URLSearchParams(search).get('tema'), themes) ?? themeById(serverId, themes) ?? themes[0];
 }
 
 /** Tema novo a partir de outro: herda tudo e troca só o que redefinir. */
-export function extendTheme(base: Theme, over: { id: string; name: string; art?: Partial<ArtModule>; ui?: Theme['ui'] }): Theme {
-  return { id: over.id, name: over.name, art: { ...base.art, ...over.art }, ui: { ...base.ui, ...over.ui } };
+export function extendTheme(
+  base: Theme,
+  over: { id: string; name: string; art?: Partial<ArtModule>; building?: BuildingPlan; ui?: Theme['ui'] },
+): Theme {
+  return { id: over.id, name: over.name, art: { ...base.art, ...over.art }, building: over.building ?? base.building, ui: { ...base.ui, ...over.ui } };
 }
 
 let active: Theme = escritorio;

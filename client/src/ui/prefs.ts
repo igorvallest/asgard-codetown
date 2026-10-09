@@ -1,7 +1,6 @@
 // Preferências da interface, persistidas em localStorage ('habblaud:prefs').
 // Puro: o armazenamento é injetado (testável em node).
 import { DEFAULT_SOUND_SETTINGS, sanitizeSoundSettings, type SoundSettings } from '../audio/scheduler';
-import { DEFAULT_THEME_ID, themeById } from '../theme';
 import type { DaylightMode, WorldOptions } from '../world/api';
 import { DEFAULT_WORLD_OPTIONS } from '../world/api';
 
@@ -23,8 +22,6 @@ export interface UiPrefs {
   feedOpen: boolean;
   /** Contas ocultas na barra lateral (AccountInfo.id). */
   hiddenAccounts: string[];
-  /** Tema do escritório (id de um tema registrado em theme/). */
-  theme: string;
 }
 
 export const DEFAULT_PREFS: UiPrefs = {
@@ -38,7 +35,6 @@ export const DEFAULT_PREFS: UiPrefs = {
   sidebarOpen: true,
   feedOpen: true,
   hiddenAccounts: [],
-  theme: DEFAULT_THEME_ID,
 };
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
@@ -63,7 +59,6 @@ export function sanitizePrefs(raw: unknown): UiPrefs {
     sidebarOpen: bool(o.sidebarOpen, d.sidebarOpen),
     feedOpen: bool(o.feedOpen, d.feedOpen),
     hiddenAccounts: Array.isArray(o.hiddenAccounts) ? o.hiddenAccounts.filter((x): x is string => typeof x === 'string').slice(0, 20) : [],
-    theme: typeof o.theme === 'string' && themeById(o.theme) ? o.theme : d.theme,
   };
 }
 

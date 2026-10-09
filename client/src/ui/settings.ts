@@ -1,5 +1,5 @@
 // Configurações (popover): opções do escritório, avisos, modo demonstração e Sobre (versão).
-import { activeTheme, THEMES } from '../theme';
+import { activeTheme } from '../theme';
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, setAttr, setHidden, setText } from './dom';
 import { ICONS } from './icons';
@@ -62,7 +62,7 @@ export class SettingsPopover implements UiComponent {
   private bubbles: ReturnType<typeof segmented<UiPrefs['bubbles']>>;
   private liveliness: ReturnType<typeof segmented<UiPrefs['liveliness']>>;
   private daylight: ReturnType<typeof segmented<UiPrefs['daylight']>>;
-  private theme: ReturnType<typeof segmented<string>>;
+  private themeRow: HTMLElement;
   private soundGroup: SoundSettingsGroup;
   private demoGroup: HTMLElement;
   private about: AboutGroup;
@@ -109,19 +109,13 @@ export class SettingsPopover implements UiComponent {
       (v) => ctx.updatePrefs({ daylight: v }),
     );
     this.daylight.row.append(h('span', { class: 'ui-set__hint', text: 'Automático: céu, luzes e sol nas janelas seguem a hora local.' }));
-    this.theme = segmented<string>(
-      'Tema',
-      THEMES.map((t): [string, string] => [t.id, t.name]),
-      (v) => {
-        if (v === activeTheme().id) return;
-        ctx.updatePrefs({ theme: v });
-        // A arte do tema é montada ao abrir a página. Recarrega sem o ?tema=, que venceria a escolha.
-        const url = new URL(location.href);
-        url.searchParams.delete('tema');
-        location.replace(url);
-      },
+    // O tema é do servidor (nomes e visual andam juntos): aqui só se mostra qual é.
+    this.themeRow = h(
+      'div',
+      { class: 'ui-set ui-set--stack' },
+      h('span', { class: 'ui-set__label', text: `Tema: ${activeTheme().name}` }),
+      h('span', { class: 'ui-set__hint', text: 'Definido no servidor: HABBLAUD_TEMA ou npm run dev -- --tema <nome>.' }),
     );
-    this.theme.row.append(h('span', { class: 'ui-set__hint', text: 'Muda a cara do escritório; a página recarrega.' }));
     this.soundGroup = new SoundSettingsGroup(ctx, sound);
 
     this.demoGroup = h(
@@ -146,7 +140,7 @@ export class SettingsPopover implements UiComponent {
         this.bubbles.row,
         this.liveliness.row,
         this.daylight.row,
-        this.theme.row,
+        this.themeRow,
       ),
       h(
         'div',
@@ -216,7 +210,6 @@ export class SettingsPopover implements UiComponent {
     this.bubbles.set(p.bubbles);
     this.liveliness.set(p.liveliness);
     this.daylight.set(p.daylight);
-    this.theme.set(activeTheme().id);
     this.soundGroup.render();
     setHidden(this.demoGroup, this.ctx.store.mock);
     this.about.render();

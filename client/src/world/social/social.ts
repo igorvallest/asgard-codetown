@@ -8,7 +8,6 @@ import type { Dir, HeldItem, Pose } from '../../art/api';
 import type { AgentSocial, SocialEvent } from '../api';
 import { mulberry32 } from '../../../../shared/hash';
 import { TILE } from '../constants';
-import { CAFE_ID, LOUNGE_ID, RECEPTION_ID, RESTROOM_ID } from '../layout/core';
 import type { SpotDef } from '../layout/types';
 import { FREE } from '../path/grid';
 import { isLongIdle } from '../sim/behavior';
@@ -62,7 +61,6 @@ const COIN_COLOR = '#ffd34d';
 const LOSS_COLOR = '#ff8a8a';
 
 const KIND_LIST = Object.keys(KINDS) as GatherKind[];
-const PLACES: Readonly<Record<string, string>> = { [LOUNGE_ID]: 'Lounge', [CAFE_ID]: 'Copa', [RECEPTION_ID]: 'Recepção', [RESTROOM_ID]: 'Banheiros' };
 /** O que se perde/ganha em cada jogo (texto do extrato: "Perdeu no jokenpô para Rafaela"). */
 const MATCH_WHAT: Partial<Record<GatherKind, string>> = {
   rps: 'no jokenpô',
@@ -430,7 +428,7 @@ export class Social {
       case 'tv':
       case 'videogame': {
         if (this.tvBusy()) return null;
-        const seats = [...spots.ofKind('sofa'), ...spots.ofKind('armchair')].filter((s) => s.areaId === LOUNGE_ID && free(s));
+        const seats = [...spots.ofKind('sofa'), ...spots.ofKind('armchair')].filter((s) => s.areaId === this.sim.plan.roles.leisure && free(s));
         const sofa = seats.filter((s) => s.kind === 'sofa').sort((a, b) => a.tx - b.tx);
         const chairs = seats.filter((s) => s.kind !== 'sofa');
         if (kind === 'videogame') {
@@ -468,7 +466,7 @@ export class Social {
       case 'kitchen':
         return this.kitchenSeats(n, free, ch.rng);
       case 'mirror': {
-        const sinks = spots.ofKind('sink').filter((s) => s.areaId === RESTROOM_ID && free(s)).sort((a, b) => a.tx - b.tx);
+        const sinks = spots.ofKind('sink').filter((s) => s.areaId === this.sim.plan.roles.restroom && free(s)).sort((a, b) => a.tx - b.tx);
         if (n === 1) return sinks.length ? { seats: [sinks[Math.floor(ch.rng() * sinks.length)]], pool: [] } : null;
         for (let i = 0; i + 1 < sinks.length; i++) if (sinks[i + 1].tx === sinks[i].tx + 1) return { seats: [sinks[i], sinks[i + 1]], pool: [] };
         return null;
@@ -481,7 +479,7 @@ export class Social {
    * Para 3–4, dois pares vizinhos da mesa comprida.
    */
   private kitchenSeats(n: number, free: (s: SpotDef) => boolean, rng: () => number): SeatPlan | null {
-    const seats = this.sim.spots.ofKind('cafe_seat').filter((s) => s.areaId === CAFE_ID);
+    const seats = this.sim.spots.ofKind('cafe_seat').filter((s) => s.areaId === this.sim.plan.roles.kitchen);
     const at = (x: number, y: number, dir: Dir) => seats.find((s) => s.tx === x && s.ty === y && s.dir === dir);
     const pairs: SpotDef[][] = [];
     for (const s of seats) {
@@ -1231,7 +1229,7 @@ export class Social {
     if (this.events.length >= MAX_EVENTS) this.events.shift();
     const first = g.members.find((m) => m.spot);
     const area = first?.spot ? this.sim.spots.get(first.spot)?.areaId : undefined;
-    const place = (area && (PLACES[area] ?? this.sim.rooms.get(area)?.info.name)) || 'Escritório';
+    const place = (area && (this.sim.plan.roles.names[area] ?? this.sim.rooms.get(area)?.info.name)) || 'Escritório';
     this.events.push({ id: `social:${g.id}:${++this.eventSeq}`, at: now, icon, agentId, text, place });
   }
 

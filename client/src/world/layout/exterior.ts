@@ -1,8 +1,8 @@
 // Área externa: grama, árvores, calçada e rua; pátio/jardim nos slots sem sala.
 import type { WallStyle } from '../../art/api';
 import { mulberry32 } from '../../../../shared/hash';
-import { BUILDING_H, COL_W, CORE_COLS, CORRIDOR_Y, EXT_EAST, EXT_NORTH, EXT_SOUTH, EXT_WEST, SOUTH_Y, TILE } from '../constants';
-import { cellRect, slotAt, slotColumn, slotSide } from './geometry';
+import { BUILDING_H, COL_W, CORE_COLS, CORRIDOR_H, CORRIDOR_Y, EXT_EAST, EXT_NORTH, EXT_SOUTH, EXT_WEST, SOUTH_Y, TILE } from '../constants';
+import { cellRect, slotAt, slotColumn, slotSide, type Side } from './geometry';
 import type { ExteriorProp, FloorPatch, TileRect, WallItemPlacement, WallSegment } from './types';
 
 export const EXTERIOR_WALL: WallStyle = { base: '#cfc8bd', trim: '#8a8174', pattern: 'brick', exterior: true };
@@ -23,6 +23,10 @@ export interface ExteriorLayout {
 export interface SlotShell {
   slot: number;
   rect: TileRect;
+  /** Lado do corredor: o norte fecha com fachada de janelas, o sul com mureta. */
+  side: Side;
+  /** Faixa (tiles) que o sol das janelas do fechamento ilumina; ausente = sem raios de sol. */
+  sun?: TileRect;
   walls: WallSegment[];
   windows: WallItemPlacement[];
   floors: FloorPatch[];
@@ -167,5 +171,7 @@ export function slotShell(slot: number, lastColumn: boolean): SlotShell {
     props.push({ kind: rng() < 0.5 ? 'pine' : 'tree', x: x0 + T(15) - 6, y: T(rect.y + 11) + 4, seed: seed(), slot });
     props.push({ kind: 'rock', x: x0 + T(14), y: T(rect.y + 2) + 4, seed: slot + 3, slot });
   }
-  return { slot, rect, walls, windows, floors, props };
+  const shell: SlotShell = { slot, rect, side, walls, windows, floors, props };
+  if (side === 'north') shell.sun = { x: rect.x, y: CORRIDOR_Y, w: rect.w, h: CORRIDOR_H };
+  return shell;
 }

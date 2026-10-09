@@ -7,8 +7,7 @@ import { DEFAULT_WORLD_OPTIONS, type Selection, type SocialEvent, type SoundCue,
 import { loadWorldAssets, type WorldAssets } from './assets';
 import { Camera, overviewFrame } from './camera';
 import { createDebug, type WorldDebug } from './debug';
-import { BUILDING_H, COL_W } from './constants';
-import { inRect } from './layout/geometry';
+import { inRect, rectPx } from './layout/geometry';
 import { attachInput, type Hit } from './input';
 import { rebaseSnapshot } from './playback';
 import { Overlay } from './render/overlay';
@@ -21,10 +20,11 @@ export type { WorldDebug } from './debug';
 
 export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore): WorldApi & { debug: WorldDebug } {
   const art: ArtModule = activeTheme().art;
+  const plan = activeTheme().building;
   let options: WorldOptions = { ...DEFAULT_WORLD_OPTIONS };
   const camera = new Camera();
   // Simulação e desenho são recriados quando o timelapse entra, pula ou sai (rebuild).
-  let sim = new Sim(art, () => options);
+  let sim = new Sim(art, () => options, undefined, plan);
   let renderer = new Renderer(canvas, art, sim, camera);
   let overlay = new Overlay(renderer.ctx, sim, renderer, camera);
   let assets: WorldAssets | null = null;
@@ -63,11 +63,12 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore): Worl
     updateBounds();
   };
 
-  const buildingRect = () => ({ x: 0, y: 0, w: sim.building.cols * COL_W * TILE, h: BUILDING_H * TILE });
+  const buildingRect = () => rectPx(sim.building.rect);
 
   const updateBounds = () => {
     const b = buildingRect();
-    camera.bounds = { x: b.x - 7 * TILE, y: b.y - 6 * TILE, w: b.w + 14 * TILE, h: b.h + 18 * TILE };
+    const pad = plan.cameraPad;
+    camera.bounds = { x: b.x - pad.left * TILE, y: b.y - pad.top * TILE, w: b.w + (pad.left + pad.right) * TILE, h: b.h + (pad.top + pad.bottom) * TILE };
     const fit = camera.fitZoom(b, 16);
     camera.minZoom = Math.min(1, Math.max(0.25, fit));
     camera.clamp();
@@ -299,7 +300,7 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore): Worl
   const rebuild = () => {
     // As carteiras ao vivo gravam a cada 5 s: não perde o que mudou desde a última vez (no replay, não grava nada).
     sim.social.wallets.save(Date.now());
-    sim = new Sim(art, () => options, playback ? null : undefined);
+    sim = new Sim(art, () => options, playback ? null : undefined, plan);
     renderer = new Renderer(canvas, art, sim, camera);
     if (assets) renderer.setAssets(assets);
     if (playback) {

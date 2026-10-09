@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { ArtModule } from '../art/api';
+import { officePlan } from '../world/layout/plan';
 import { applyThemeUi, DEFAULT_THEME_ID, extendTheme, resolveTheme, THEMES, type Theme } from './index';
 
 const base: Theme = {
   id: 'base',
   name: 'Base',
   art: { roomTheme: () => 'base', iconSprite: () => 'ícone' } as unknown as ArtModule,
+  building: officePlan,
   ui: { '--ui-accent': '#111111' },
 };
-const outro: Theme = { id: 'outro', name: 'Outro', art: base.art };
+const outro: Theme = { id: 'outro', name: 'Outro', art: base.art, building: officePlan };
 
 describe('temas', () => {
   it('o Escritório é o padrão e traz a arte inteira', () => {
@@ -18,7 +20,7 @@ describe('temas', () => {
     expect(typeof THEMES[0].art.avatarCanvas).toBe('function');
   });
 
-  it('resolveTheme: a preferência vale, ?tema= vence e id desconhecido é ignorado', () => {
+  it('resolveTheme: o tema do servidor vale, ?tema= vence e id desconhecido é ignorado', () => {
     const list = [base, outro];
     expect(resolveTheme(undefined, '', list).id).toBe('base');
     expect(resolveTheme('outro', '', list).id).toBe('outro');

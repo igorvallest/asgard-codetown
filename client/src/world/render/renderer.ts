@@ -5,9 +5,8 @@ import { TILE, type ArtModule, type CharacterFrameRequest, type IconName, type S
 import type { WorldOptions } from '../api';
 import type { WorldAssets } from '../assets';
 import type { Camera } from '../camera';
-import { BUILDING_H, COL_W, CORE_COLS, CORRIDOR_Y } from '../constants';
-import { layoutExterior, slotShell, type ExteriorLayout, type SlotShell } from '../layout/exterior';
-import { slotAt } from '../layout/geometry';
+import type { ExteriorLayout, SlotShell } from '../layout/exterior';
+import type { FacadeGlow, PlanOutside } from '../layout/plan';
 import type { ExteriorProp } from '../layout/types';
 import { screenModeFor } from '../sim/behavior';
 import type { Character } from '../sim/character';
@@ -79,6 +78,8 @@ export class Renderer {
   readonly areas = new Map<string, AreaVis>();
   readonly heads = new Map<string, HeadInfo>();
   exterior: ExteriorLayout;
+  /** O que o plano do prédio põe do lado de fora (terreno, vagas vazias, entrada). */
+  private outside: PlanOutside;
   shells: SlotShell[] = [];
   shellWindows: WallVis[] = [];
   private base: HTMLCanvasElement | null = null;
@@ -122,8 +123,14 @@ export class Renderer {
     private readonly camera: Camera,
   ) {
     this.ctx = canvas.getContext('2d', { alpha: false })!;
-    this.exterior = layoutExterior(sim.building.cols);
+    this.outside = sim.plan.outside(sim.building.cols);
+    this.exterior = this.outside.exterior;
     this.lighting = new Lighting(art, sim);
+  }
+
+  /** Brilhos noturnos das fachadas (para o mapa de luz). */
+  get glows(): readonly FacadeGlow[] {
+    return this.outside.glows;
   }
 
   setAssets(a: WorldAssets | null): void {
@@ -151,7 +158,7 @@ export class Renderer {
         want.add(room.id);
       }
       for (const id of [...this.areas.keys()]) if (!want.has(id)) this.areas.delete(id);
-      this.elevatorVis = this.areas.get('core:recepcao')?.wallItems.filter((w) => w.kind === 'elevator') ?? [];
+      this.elevatorVis = this.areas.get(sim.plan.roles.arrival)?.wallItems.filter((w) => w.kind === 'elevator') ?? [];
     }
     // salas: (re)constrói quando surgem, mudam de layout ou de versão (nome/tema)
     this.occupiedSlots.clear();
@@ -171,7 +178,8 @@ export class Renderer {
   private buildBase(): void {
     const cols = this.sim.building.cols;
     this.baseCols = cols;
-    this.exterior = layoutExterior(cols);
+    this.outside = this.sim.plan.outside(cols);
+    this.exterior = this.outside.exterior;
     const b = this.exterior.bounds;
     this.baseX = b.x * TILE;
     this.baseY = b.y * TILE;
@@ -183,18 +191,17 @@ export class Renderer {
     ctx.translate(-this.baseX, -this.baseY);
     paintShell(this.art, ctx, this.exterior.floors, []);
     // faixas da rua
-    const ly = this.exterior.streetY + Math.round(this.exterior.streetH / 2) - 1;
-    ctx.fillStyle = 'rgba(255,236,170,0.75)';
-    for (let x = this.baseX + 4; x < this.baseX + c.width; x += 24) ctx.fillRect(x, ly, 12, 2);
+    if (this.outside.street) {
+      const ly = this.exterior.streetY + Math.round(this.exterior.streetH / 2) - 1;
+      ctx.fillStyle = 'rgba(255,236,170,0.75)';
+      for (let x = this.baseX + 4; x < this.baseX + c.width; x += 24) ctx.fillRect(x, ly, 12, 2);
+    }
     this.shells = [];
     this.shellWindows = [];
-    for (let col = CORE_COLS; col < cols; col++) {
-      for (const side of ['north', 'south'] as const) {
-        const sh = slotShell(slotAt(col, side), col === cols - 1);
-        this.shells.push(sh);
-        paintShell(this.art, ctx, sh.floors, sh.walls);
-        for (const w of sh.windows) this.shellWindows.push(toWallVis(w, `shell:${sh.slot}`));
-      }
+    for (const sh of this.outside.shells) {
+      this.shells.push(sh);
+      paintShell(this.art, ctx, sh.floors, sh.walls);
+      for (const w of sh.windows) this.shellWindows.push(toWallVis(w, `shell:${sh.slot}`));
     }
     this.desaturate(ctx);
     // fundo além da área desenhada: a própria grama (amostra espelhada 2x2, sem emendas), já no
@@ -270,7 +277,11 @@ export class Renderer {
     ctx.save();
     // vinheta: escurece com a distância ao prédio e chega ao tom da grama "de fora" exatamente na
     // borda da área desenhada (máscara de 1 px por tile, ampliada com suavização)
-    const bwT = cols * COL_W;
+    const br = this.sim.plan.rectFor(cols);
+    const left = br.x;
+    const right = br.x + br.w;
+    const top = br.y;
+    const bottom = br.y + br.h;
     const smooth = (a: number, z: number, v: number) => {
       const t = Math.max(0, Math.min(1, (v - a) / Math.max(1e-6, z - a)));
       return t * t * (3 - 2 * t);
@@ -285,8 +296,8 @@ export class Renderer {
         for (let tx = 0; tx < b.w; tx++) {
           const wx = b.x + tx + 0.5;
           const wy = b.y + ty + 0.5;
-          const fx = wx < 0 ? smooth(6, -b.x, -wx) : wx > bwT ? smooth(6, b.x + b.w - bwT, wx - bwT) : 0;
-          const fy = wy < 0 ? smooth(5, -b.y, -wy) : wy > BUILDING_H ? smooth(12, b.y + b.h - BUILDING_H, wy - BUILDING_H) : 0;
+          const fx = wx < left ? smooth(6, left - b.x, left - wx) : wx > right ? smooth(6, b.x + b.w - right, wx - right) : 0;
+          const fy = wy < top ? smooth(5, top - b.y, top - wy) : wy > bottom ? smooth(12, b.y + b.h - bottom, wy - bottom) : 0;
           const i = (ty * b.w + tx) * 4;
           img.data[i] = 18;
           img.data[i + 1] = 40;
@@ -301,14 +312,16 @@ export class Renderer {
     } catch {
       // sem vinheta
     }
-    // capacho diante da fachada de vidro da entrada (oeste do corredor)
-    const my = (CORRIDOR_Y + 1.25) * TILE;
-    ctx.fillStyle = '#3f4652';
-    ctx.fillRect(-1.75 * TILE, my, 1.5 * TILE, 2.5 * TILE);
-    ctx.fillStyle = '#596170';
-    ctx.fillRect(-1.75 * TILE + 2, my + 2, 1.5 * TILE - 4, 2.5 * TILE - 4);
-    ctx.fillStyle = '#4b525f';
-    for (let y = my + 4; y < my + 2.5 * TILE - 4; y += 3) ctx.fillRect(-1.75 * TILE + 3, y, 1.5 * TILE - 6, 1);
+    // capacho diante da entrada
+    const mat = this.outside.doormat;
+    if (mat) {
+      ctx.fillStyle = '#3f4652';
+      ctx.fillRect(mat.x, mat.y, mat.w, mat.h);
+      ctx.fillStyle = '#596170';
+      ctx.fillRect(mat.x + 2, mat.y + 2, mat.w - 4, mat.h - 4);
+      ctx.fillStyle = '#4b525f';
+      for (let y = mat.y + 4; y < mat.y + mat.h - 4; y += 3) ctx.fillRect(mat.x + 3, y, mat.w - 6, 1);
+    }
     ctx.restore();
   }
 
@@ -660,7 +673,7 @@ export class Renderer {
   /** Placa com o nome (o texto nítido é escrito pelo overlay em espaço de tela). */
   private drawSign(vis: AreaVis, w: WallVis, slide: number): void {
     const { ctx } = this;
-    if (!vis.room && this.assets?.signage && vis.id === 'core:recepcao') {
+    if (!vis.room && this.assets?.signage && vis.id === this.sim.plan.roles.brand) {
       const a = this.assets.signage;
       const maxW = 5 * TILE;
       const maxH = 24;
@@ -684,7 +697,7 @@ export class Renderer {
   /** Retângulo (px de mundo) da área de texto da placa de uma área, se houver. */
   signRect(vis: AreaVis): { x: number; y: number; w: number; h: number } | null {
     if (!vis.sign) return null;
-    if (!vis.room && this.assets?.signage && vis.id === 'core:recepcao') return null;
+    if (!vis.room && this.assets?.signage && vis.id === this.sim.plan.roles.brand) return null;
     const s = wallSprites(this.art, 'sign', vis.sign.variant, 0, vis.sign.seed);
     if (!s) return null;
     const o = wallItemOrigin(vis.sign, s.base);

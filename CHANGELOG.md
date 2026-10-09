@@ -12,8 +12,9 @@ do meio (0.**3**.0).
 
 ### Adicionado
 
-- **Temas.** A cara do escritório (arte do mundo, avatares e cores dos painéis) agora vem de um tema, escolhido em
-  **Configurações › Escritório › Tema** ou por `?tema=<id>` na URL. Por enquanto só existe o Escritório, o visual de
+- **Temas.** A cara do escritório (planta do prédio, arte do mundo, avatares, nomes e cores dos painéis) agora vem de
+  um tema, definido no servidor por `HABBLAUD_TEMA` (ou `npm run dev -- --tema <nome>`) e mostrado em
+  **Configurações › Escritório**; `?tema=<id>` na URL troca só o visual, para testar. O padrão é o Escritório de
   sempre; um tema novo nasce de outro e troca só o que quiser.
 
 ### Corrigido

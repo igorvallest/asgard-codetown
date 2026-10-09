@@ -7,8 +7,8 @@
 // montagem de salas); por frame, um drawImage em 'multiply' e alguns sprites de brilho em cache.
 import { TILE, type ArtModule, type ScreenMode } from '../../art/api';
 import { mulberry32 } from '../../../../shared/hash';
-import { BUILDING_H, COL_W, CORRIDOR_H, CORRIDOR_Y } from '../constants';
 import type { ExteriorLayout, SlotShell } from '../layout/exterior';
+import type { FacadeGlow } from '../layout/plan';
 import type { RoomState } from '../sim/room-state';
 import type { Sim } from '../sim/sim';
 import { buildAnim } from './anim';
@@ -36,6 +36,8 @@ export interface LightScene {
   readonly exterior: ExteriorLayout;
   readonly shells: readonly SlotShell[];
   readonly shellWindows: readonly WallVis[];
+  /** Fachadas de vidro que brilham à noite (definidas pelo plano do prédio). */
+  readonly glows: readonly FacadeGlow[];
   readonly cars: readonly { x: number; y: number; dir: 1 | -1 }[];
   roomInSlot(slot: number): RoomState | undefined;
   deskScreen(f: FurnVis, area: AreaVis): ScreenMode;
@@ -345,7 +347,7 @@ export class Lighting {
       if (scene.roomInSlot(sh.slot)) continue;
       const r = sh.rect;
       m.fillStyle = corridorLit;
-      if (r.y === 0) m.fillRect(r.x * TILE, (r.y + r.h - 2) * TILE, r.w * TILE, 2 * TILE);
+      if (sh.side === 'north') m.fillRect(r.x * TILE, (r.y + r.h - 2) * TILE, r.w * TILE, 2 * TILE);
       else m.fillRect(r.x * TILE, r.y * TILE, r.w * TILE, TILE);
     }
     const lit = new Map<AreaVis, number>();
@@ -425,23 +427,22 @@ export class Lighting {
     halo: (img: HTMLCanvasElement, cx: number, cy: number, w: number, h: number, a: number) => void,
     warm: HTMLCanvasElement,
   ): void {
-    const bw = this.sim.building.cols * COL_W * TILE;
-    const bh = BUILDING_H * TILE;
+    const br = this.sim.building.rect;
+    const top = br.y;
+    const bottom = br.y + br.h;
     for (const [vis, l] of lit) {
       if (l < 0.3) continue;
       const r = vis.layout.rect;
-      if (r.y === 0) {
+      if (r.y === top) {
         // janelas da parede norte -> gramado ao norte do prédio
-        for (const w of vis.wallItems) if (w.kind === 'window') halo(warm, w.cx, -12, 58, 30, 0.55 * k * l);
-      } else if (vis.layout.kind !== 'corridor' && r.y + r.h >= BUILDING_H) {
+        for (const w of vis.wallItems) if (w.kind === 'window') halo(warm, w.cx, top * TILE - 12, 58, 30, 0.55 * k * l);
+      } else if (vis.layout.kind !== 'corridor' && r.y + r.h >= bottom) {
         // salas ao sul: brilho suave sobre a cerca viva e a calçada
-        for (const fx of [0.25, 0.75]) halo(warm, (r.x + r.w * fx) * TILE, bh + 16, 96, 30, 0.35 * k * l);
+        for (const fx of [0.25, 0.75]) halo(warm, (r.x + r.w * fx) * TILE, bottom * TILE + 16, 96, 30, 0.35 * k * l);
       }
     }
-    // fachadas de vidro do corredor (entrada a oeste e ponta leste)
-    const cy = (CORRIDOR_Y + CORRIDOR_H / 2) * TILE;
-    halo(warm, -20, cy, 56, 92, 0.6 * k);
-    halo(warm, bw + 20, cy, 56, 92, 0.45 * k);
+    // fachadas de vidro (no Escritório: a entrada a oeste e a ponta leste do corredor)
+    for (const g of scene.glows) halo(warm, g.x, g.y, g.w, g.h, g.a * k);
     // janelas do corredor que dão para os pátios dos slots vazios
     for (const w of scene.shellWindows) {
       const slot = Number(w.areaId.slice(6));
@@ -536,8 +537,9 @@ export class Lighting {
       }
       ctx.restore();
     };
+    const top = this.sim.building.rect.y;
     for (const vis of scene.areas.values()) {
-      if (vis.layout.rect.y !== 0) continue;
+      if (vis.layout.rect.y !== top) continue;
       if (vis.room && vis.room.phase !== 'ready') continue;
       const ws = vis.wallItems.filter((w) => w.kind === 'window');
       if (!ws.length) continue;
@@ -545,9 +547,9 @@ export class Lighting {
       draw(ws, { x: p.x, y: p.y + 2 * TILE, w: p.w, h: p.h - 3 * TILE });
     }
     for (const sh of scene.shells) {
-      if (sh.rect.y !== 0 || scene.roomInSlot(sh.slot)) continue;
+      if (!sh.sun || scene.roomInSlot(sh.slot)) continue;
       const ws = scene.shellWindows.filter((w) => w.areaId === `shell:${sh.slot}`);
-      draw(ws, { x: sh.rect.x * TILE, y: CORRIDOR_Y * TILE, w: sh.rect.w * TILE, h: CORRIDOR_H * TILE });
+      draw(ws, { x: sh.sun.x * TILE, y: sh.sun.y * TILE, w: sh.sun.w * TILE, h: sh.sun.h * TILE });
     }
   }
 

@@ -7,7 +7,7 @@
 import { TILE } from '../../art/api';
 import type { WorldOptions } from '../api';
 import type { Camera } from '../camera';
-import { COL_W, CORRIDOR_Y, SOUTH_Y } from '../constants';
+import { COL_W } from '../constants';
 import type { Character } from '../sim/character';
 import { shellAgeKey, shellBubbleAlpha, shellBubbleText, STORM_LIFT, unitHash } from '../sim/shell';
 import type { Sim } from '../sim/sim';
@@ -44,13 +44,6 @@ export const TINY_ZOOM = 0.6;
 /** Na visão geral: balões de atividade com texto por área (sala, núcleo, trecho do corredor) e no total. */
 const OVERVIEW_PER_ROOM = 1;
 const OVERVIEW_TOTAL = 4;
-
-const CORE_NAMES: Record<string, string> = {
-  'core:recepcao': 'Recepção',
-  'core:banheiros': 'Banheiros',
-  'core:copa': 'Copa',
-  'core:lounge': 'Lounge',
-};
 
 /** 'shell' = espera de shell: balão escuro de terminal com texto verde. 'say' = fala das rodas (papo, torcida, apostas). */
 type Tone = 'info' | 'alert' | 'deliver' | 'shell' | 'say';
@@ -394,7 +387,7 @@ export class Overlay {
       if (it.type !== 'bubble' || (it.tone !== 'info' && it.tone !== 'shell' && it.tone !== 'say') || it.prio >= 75) continue;
       // por área FÍSICA (onde o personagem está agora), que é o que polui a tela
       const ch = it.ch;
-      rin.push({ room: `${Math.floor(ch.tx / COL_W)}:${ch.ty < CORRIDOR_Y ? 'n' : ch.ty < SOUTH_Y ? 'c' : 's'}`, prio: it.prio, changedAt: it.changedAt });
+      rin.push({ room: this.sim.plan.bucketOf(ch.tx, ch.ty), prio: it.prio, changedAt: it.changedAt });
       idx.push(it);
     }
     if (!idx.length) return;
@@ -416,7 +409,8 @@ export class Overlay {
       const anim = room ? buildAnim(room.phase, room.progress(now)) : null;
       // texto da placa quando ela fica grande o bastante para ler; senão, o nome flutuante
       const rect = this.renderer.signRect(vis);
-      const text = room ? room.info.name : vis.id === 'core:recepcao' ? 'Habblaud' : null;
+      const roles = this.sim.plan.roles;
+      const text = room ? room.info.name : vis.id === roles.brand ? roles.brandName : null;
       const readable = !!rect && rect.h * zoom >= SIGN_MIN_PX;
       if (readable && rect && text && (!anim || anim.sign >= 1)) {
         const ax = this.sx(rect.x);
@@ -436,8 +430,8 @@ export class Overlay {
         // endereço antigo de uma mudança: o nome já está na sala nova
         if (!room.present || room.ghost || (anim && anim.walls < 0.6)) continue;
         this.drawRoomPill(room.info.name, cx, cy, colW - 8, room.accounts, this.countIn(room.id), room.theme.accent, room.lightOn);
-      } else if (CORE_NAMES[vis.id]) {
-        this.drawCorePill(CORE_NAMES[vis.id], cx, cy, colW - 8);
+      } else if (roles.names[vis.id]) {
+        this.drawCorePill(roles.names[vis.id], cx, cy, colW - 8);
       }
     }
   }
