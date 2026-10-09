@@ -50,6 +50,8 @@ const FEED_LIMIT = 200;
 export interface OfficeDeps {
   names: NameStore;
   version: string;
+  /** Tema do escritório (ver OfficeSnapshot.meta.theme e ServerConfig.theme). */
+  theme?: string;
   /** Build do cliente servido (ver OfficeSnapshot.meta.build); ausente no modo dev e nos testes. */
   build?: () => string | undefined;
   startedAt: number;
@@ -93,6 +95,8 @@ export interface MainInput {
   sessionId: string;
   cwd: string;
   role: string;
+  /** `claude --agent <nome>` (AgentInfo.agent). */
+  agent?: string;
   startedAt: number;
   status: AgentStatus;
   waitingFor?: string;
@@ -282,7 +286,7 @@ export class Office {
     }
     const roomId = normalizeCwd(p.cwd);
     this.ensureRoom(roomId, now);
-    const person = this.deps.names.assign(p.sessionId, this.usedNames());
+    const person = this.deps.names.assign(p.sessionId, this.usedNames(), { agent: p.agent });
     const info: AgentInfo = {
       id: p.id,
       kind: 'main',
@@ -302,6 +306,7 @@ export class Office {
       seed: hash32(p.id),
     };
     if (p.provider && p.provider !== 'claude') info.provider = p.provider;
+    if (p.agent) info.agent = p.agent;
     if (p.status === 'waiting') info.waitingFor = p.waitingFor ?? 'responder no terminal';
     const rec: AgentRecord = { info, history: [] };
     if (p.status === 'working') rec.turnStart = now;
@@ -845,6 +850,7 @@ export class Office {
         sources: this.deps.sources(),
         startedAt: this.deps.startedAt,
         version: this.deps.version,
+        theme: this.deps.theme,
         build: this.deps.build?.(),
         terminal: this.deps.terminal === true,
         messages: this.deps.messages !== undefined,

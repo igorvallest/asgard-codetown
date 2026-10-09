@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Activity } from '../../shared/types';
-import { NAME_POOL } from '../../shared/names';
+import { NAME_POOL, NORSE_NAME_POOL } from '../../shared/names';
 import { setQuiet } from '../log';
 import { tempDir } from '../test/fixtures';
 import { NameStore } from './names';
@@ -72,6 +72,39 @@ describe('NameStore', () => {
     } finally {
       tmp.cleanup();
     }
+  });
+
+  it('Asgard: Odin, Mímir e Frigg pelo --agent (o mesmo nome em toda sessão); o resto sai do pool nórdico', () => {
+    const s = new NameStore(null, { theme: 'asgard' });
+    expect(s.assign('sess-1', new Set(), { agent: 'odin' })).toEqual({ name: 'Odin', look: 'm' });
+    expect(s.assign('sess-2', new Set(['Odin']), { agent: 'Odin' })).toEqual({ name: 'Odin', look: 'm' });
+    expect(s.assign('sess-3', new Set(), { agent: 'mimir' }).name).toBe('Mímir');
+    expect(s.assign('sess-4', new Set(), { agent: 'frigg' })).toEqual({ name: 'Frigg', look: 'f' });
+    const other = s.assign('sess-5', new Set(), { agent: 'qa' });
+    expect(NORSE_NAME_POOL.some((p) => p.name === other.name)).toBe(true);
+    expect(NORSE_NAME_POOL.some((p) => p.name === s.assign('sub-1', new Set()).name)).toBe(true);
+  });
+
+  it('Escritório ignora o --agent; cada tema guarda os seus nomes', () => {
+    const tmp = tempDir();
+    try {
+      const file = join(tmp.dir, 'names.json');
+      const office = new NameStore(file);
+      const br = office.assign('sess-1', new Set(), { agent: 'odin' });
+      expect(NAME_POOL.some((p) => p.name === br.name)).toBe(true);
+      office.flush();
+      const asgard = new NameStore(file, { theme: 'asgard' });
+      asgard.load();
+      expect(NORSE_NAME_POOL.some((p) => p.name === asgard.assign('sess-1', new Set()).name)).toBe(true);
+    } finally {
+      tmp.cleanup();
+    }
+  });
+
+  it('pool nórdico: sem nomes repetidos e sem deuses', () => {
+    const names = NORSE_NAME_POOL.map((p) => p.name);
+    expect(new Set(names).size).toBe(names.length);
+    for (const god of ['Odin', 'Thor', 'Frigg', 'Freya', 'Loki', 'Mímir', 'Mimir', 'Baldur', 'Tyr', 'Heimdall']) expect(names).not.toContain(god);
   });
 });
 

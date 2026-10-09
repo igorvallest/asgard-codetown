@@ -34,6 +34,7 @@ import { CodexHistory } from './sources/codex/history';
 import { CodexSource } from './sources/codex/source';
 import { createBuildReader } from './build';
 import { UpdateChecker } from './updates/checker';
+import { DEFAULT_THEME } from '../shared/theme';
 
 const config = loadConfig();
 const startedAt = Date.now();
@@ -48,7 +49,7 @@ if (!config.inDocker) {
 const legacyEnv = legacyEnvWarning(Object.keys(process.env));
 if (legacyEnv) log.warn(legacyEnv);
 
-const names = new NameStore(join(config.dataDir, 'names.json'));
+const names = new NameStore(join(config.dataDir, 'names.json'), { theme: config.theme });
 names.load();
 
 // Office, contas e fontes de agentes se referenciam (avisos de mudança / fontes): ligação tardia.
@@ -72,6 +73,7 @@ const accounts = new AccountsService({
 const office = new Office({
   names,
   version: config.version,
+  theme: config.theme,
   // No modo dev o Vite serve o cliente direto do código-fonte: não há build para comparar.
   build: config.dev ? undefined : createBuildReader(config.rootDir),
   startedAt,
@@ -173,6 +175,7 @@ const api = createApiHandler({
   accounts,
   sources: () => agents.sources(),
   version: config.version,
+  theme: config.theme,
   inDocker: config.inDocker,
   terminal: config.terminal,
   terminals,
@@ -237,6 +240,7 @@ server.on('error', (err: NodeJS.ErrnoException) => {
 server.listen(config.port, config.host, () => {
   const host = config.host === '0.0.0.0' || config.host === '::' ? 'localhost' : config.host;
   log.info(`🏢 Habblaud ${config.version}${config.dev ? ' (dev)' : ''}${config.inDocker ? ' (docker)' : ''} em http://${host}:${config.port}`);
+  if (config.theme !== DEFAULT_THEME) log.info(`   Tema: ${config.theme}.`);
   const list = accounts.entries();
   if (!list.length) log.warn('Nenhuma pasta do Claude Code encontrada (defina HABBLAUD_CLAUDE_DIRS).');
   for (const dir of codexDirsRefused(process.env, config.home)) {

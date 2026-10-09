@@ -128,6 +128,13 @@ describe('ClaudeWatcher', () => {
     expect(c.office.recentFeed(10).map((f) => f.activity.kind)).toEqual(['prompt', 'read']);
   });
 
+  it('claude --agent <nome>: o agente do registro chega ao AgentInfo', () => {
+    writeLines(c.transcript('sess-o'), [L.prompt('Oi', { at: c.now() - 1000 })]);
+    c.openSession(101, 'sess-o', { agent: 'odin' });
+    c.watcher.boot();
+    expect(c.agent('.claude:101')).toMatchObject({ kind: 'main', agent: 'odin', role: 'Agente odin' });
+  });
+
   it('acompanha appends do transcript e o status do registro', () => {
     const id = bootWithSession();
     appendLines(c.transcript('sess-a'), [L.assistant([L.tool('e1', 'Edit', { file_path: `${CWD}/src/Cart.tsx` })])]);

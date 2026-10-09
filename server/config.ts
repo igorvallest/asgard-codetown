@@ -4,6 +4,7 @@ import { isIP } from 'node:net';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_THEME, parseThemeId, type ThemeId } from '../shared/theme';
 import { discoverClaudeDirs } from './accounts/detect';
 import { parseAllowedHosts } from './http/guard';
 import { parseGithubRepo } from './updates/checker';
@@ -50,6 +51,17 @@ export interface ServerConfig {
   updateCheck: boolean;
   /** Observa as sessões do Codex (sources/codex/); HABBLAUD_CODEX=0 desliga. */
   codex: boolean;
+  /** Tema do escritório (`--tema <id>` ou HABBLAUD_TEMA): decide os nomes dos personagens e o visual de todos os navegadores. */
+  theme: ThemeId;
+}
+
+/** Valor de `--nome <valor>` ou `--nome=<valor>` na linha de comando. */
+function argValue(argv: readonly string[], name: string): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === name) return argv[i + 1];
+    if (argv[i].startsWith(`${name}=`)) return argv[i].slice(name.length + 1);
+  }
+  return undefined;
 }
 
 export function isTruthy(v: string | undefined): boolean {
@@ -169,5 +181,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, argv: string[] 
     repo: pkg.repo,
     updateCheck: !env.HABBLAUD_UPDATE_CHECK?.trim() || isTruthy(env.HABBLAUD_UPDATE_CHECK),
     codex: !env.HABBLAUD_CODEX?.trim() || isTruthy(env.HABBLAUD_CODEX),
+    theme: parseThemeId(argValue(argv, '--tema')) ?? parseThemeId(env.HABBLAUD_TEMA) ?? DEFAULT_THEME,
   };
 }

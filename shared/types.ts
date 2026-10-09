@@ -142,6 +142,8 @@ export interface AgentInfo {
   look: 'f' | 'm';
   /** Papel. Principal: "Agente principal". Sub: tipo do subagente ("Explore", "Plan", "fork"...). */
   role: string;
+  /** Principal aberto com `claude --agent <nome>`: o nome do agente (o tema pode dar identidade própria a ele). */
+  agent?: string;
   /** Título da sessão (principal) ou descrição da tarefa (sub). */
   title?: string;
   sessionId: string;
@@ -334,6 +336,8 @@ export interface OfficeSnapshot {
     sources: SourceInfo[];
     startedAt: number;
     version: string;
+    /** Tema do escritório escolhido no servidor (HABBLAUD_TEMA); ausente = o padrão. */
+    theme?: string;
     /**
      * Identificador do build do cliente que o servidor está servindo (nome do bundle, ex.: "main-BFqheOCa").
      * Uma página aberta com outro build está desatualizada e deve se recarregar. Ausente no modo dev.

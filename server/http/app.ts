@@ -19,6 +19,8 @@ export interface ApiDeps {
   accounts: AccountsService;
   sources: () => SourceInfo[];
   version: string;
+  /** Tema do escritório (ServerConfig.theme); o cliente lê em /api/health antes de montar o mundo. */
+  theme?: string;
   inDocker: boolean;
   /** Terminal ligado (ServerConfig.terminal: só com bind local). */
   terminal?: boolean;
@@ -225,6 +227,7 @@ export function createApiHandler(deps: ApiDeps): (req: IncomingMessage, res: Ser
         sendJson(res, 200, {
           ok: true,
           version: deps.version,
+          theme: deps.theme,
           demo: office.isDemo(),
           docker: deps.inDocker,
           terminal: !!terminals,
