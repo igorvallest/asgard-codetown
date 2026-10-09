@@ -12,6 +12,7 @@ const KINDS: FurnitureKind[] = [
   'counter', 'counter_sink', 'coffee_machine', 'microwave', 'fridge', 'vending_machine', 'water_cooler', 'barrel', 'cafe_table', 'cafe_chair',
   'hearth', 'tv', 'arcade', 'pingpong_table', 'sofa', 'armchair', 'coffee_table', 'beanbag',
   'toilet_stall', 'sink', 'mirror',
+  'well', 'loom', 'spinning_wheel',
 ];
 
 /** Gera como o tema gera (art/asgard/index.ts): normaliza, desenha e recorta. */
@@ -92,7 +93,7 @@ describe('Asgard: móveis dos salões', () => {
   });
 
   it('regiões dinâmicas do contrato: tela, espelho, brilho — opacas, com o tamanho que o mundo espera', () => {
-    const want: [FurnitureKind, SpriteRectName][] = [['tv', 'tv'], ['arcade', 'screen'], ['mirror', 'glass'], ['vending_machine', 'glow'], ['hearth', 'glow']];
+    const want: [FurnitureKind, SpriteRectName][] = [['tv', 'tv'], ['arcade', 'screen'], ['mirror', 'glass'], ['vending_machine', 'glow'], ['hearth', 'glow'], ['well', 'glow']];
     for (const [kind, name] of want) {
       const s = render(kind).base;
       const r = s.rects?.[name];

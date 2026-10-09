@@ -143,6 +143,12 @@ function build(kind: FurnitureKind, variant: string | undefined, state: number, 
       return W.poster('code');
     case 'wolf':
       return C.beanbag('blue');
+    case 'well':
+      return C.coffeeTable(seed);
+    case 'loom':
+      return O.bookshelf(seed);
+    case 'spinning_wheel':
+      return O.plantSmall('flower', seed);
   }
 }
 

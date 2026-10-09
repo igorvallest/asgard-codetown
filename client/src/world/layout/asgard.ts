@@ -397,7 +397,7 @@ export const asgardPlan: BuildingPlan = {
   },
   rectFor,
   assemble,
-  room: (input, theme) => layoutAsgardRoom(input, theme, asgardCell(input.slot)),
+  room: (input, theme, owner) => layoutAsgardRoom(input, theme, asgardCell(input.slot), owner),
   outside(bands) {
     const n = Math.max(1, bands);
     const shells: SlotShell[] = [];

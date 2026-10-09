@@ -20,8 +20,9 @@ do meio (0.**3**.0).
   Bifrost por onde os agentes chegam e vão embora; logo abaixo, cozinha, salão e banheiro; as salas de projeto descem
   de 3 em 3, entre gramados com neve e uma estrada de pedra. Os computadores viram pergaminhos com runas, e as salas
   ganham fogueira, estandartes, escudos e barris. Quem abre o Claude Code com `--agent odin` aparece como um holograma
-  do Odin, `--agent mimir` e `--agent frigg` como o Mímir e a Frigg, e os demais agentes e subagentes ganham nome e
-  visual nórdicos.
+  do Odin; com `--agent mimir` ou `--agent frigg`, aparece como o Mímir ou a Frigg, e a sala do projeto que ele abre
+  vira a dele (o poço da sabedoria, de pedra; o tear de nuvens, claro e azulado). Os demais agentes e subagentes ganham
+  nome e visual nórdicos.
 
 ### Corrigido
 

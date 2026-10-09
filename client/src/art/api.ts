@@ -201,7 +201,10 @@ export type FurnitureKind =
   | 'barrel' // 1x1 barril de carvalho com aros de ferro.
   | 'runestone' // 1x1 pedra rúnica em pé, com runas entalhadas.
   | 'banner' // 1 tile (parede): estandarte de pano pendurado. variants: 'red' | 'blue' | 'green' | 'gold'
-  | 'wolf'; // 1x1 lobo cinza deitado (Geri e Freki, aos pés do trono). variants: 'right' | 'left' = para onde olha
+  | 'wolf' // 1x1 lobo cinza deitado (Geri e Freki, aos pés do trono). variants: 'right' | 'left' = para onde olha
+  | 'well' // 2x2 poço de Mímir: anel de pedra com runas, água que brilha e raízes de Yggdrasil. rects.glow = centro da água.
+  | 'loom' // 2x2 tear de Frigg: tear de pé com o pano azul de nuvens, pesos de pedra e cestos de lã.
+  | 'spinning_wheel'; // 1x1 roca de fiar com lã branca.
 
 export interface FurnitureDef {
   mount: 'floor' | 'wall';
@@ -283,6 +286,9 @@ export const FURNITURE: Readonly<Record<FurnitureKind, FurnitureDef>> = {
   runestone: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true },
   banner: { mount: 'wall', footprint: { w: 1, h: 0 }, blocks: false, variants: ['red', 'blue', 'green', 'gold'] },
   wolf: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true, variants: ['right', 'left'] },
+  well: { mount: 'floor', footprint: { w: 2, h: 2 }, blocks: true },
+  loom: { mount: 'floor', footprint: { w: 2, h: 2 }, blocks: true },
+  spinning_wheel: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true },
 };
 
 export type FloorKind =

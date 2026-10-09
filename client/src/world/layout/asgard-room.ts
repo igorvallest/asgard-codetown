@@ -4,7 +4,10 @@
 // interruptor, quadro e placa); muda a cenografia: as mesas têm pergaminhos no lugar de monitores, o canto de
 // reunião vira uma fogueira com banquetas em volta, e entram estandartes, escudos, barris, pedra rúnica, colunas
 // de madeira e o suporte de armas. A semente espelha a sala e escolhe os enfeites.
-import { FURNITURE, type Dir, type FurnitureKind, type RoomTheme } from '../../art/api';
+//
+// Quem abre a sala decide a cara dela: a do Mímir é de pedra, com o poço da sabedoria no lugar da fogueira; a da
+// Frigg é clara e azulada, com o tear de nuvens e a roca. Os lugares continuam os mesmos.
+import { FURNITURE, type Dir, type FloorKind, type FurnitureKind, type RoomTheme } from '../../art/api';
 import { mulberry32 } from '../../../../shared/hash';
 import { DOOR_W, DOOR_X, TILE } from '../constants';
 import { AreaBuilder, type SpotOpts } from './builder';
@@ -16,7 +19,36 @@ const BANNERS = ['red', 'blue', 'green', 'gold'] as const;
 const SHIELDS = ['code', 'coffee', 'rocket', 'cat', 'bug', 'ship_it'] as const;
 const FURS = ['#8a7a68', '#6b5a45', '#a39282', '#5c4d3d'] as const;
 
-export function layoutAsgardRoom(room: RoomInput, theme: RoomTheme, cell: { rect: TileRect; side: Side }): AreaLayout {
+interface OwnRoom {
+  floor: FloorKind;
+  look: Pick<RoomTheme, 'carpet' | 'carpet2' | 'wall'>;
+  /** No lugar da fogueira (2x2, com as banquetas em volta). */
+  center: FurnitureKind;
+  banner: (typeof BANNERS)[number];
+  fur: string;
+}
+
+/** Salas próprias, pelo `--agent` de quem abriu a sala. */
+const OWN_ROOMS: Readonly<Record<string, OwnRoom>> = {
+  mimir: {
+    floor: 'concrete',
+    look: { carpet: '#6f8a84', carpet2: '#58726c', wall: { base: '#7a8784', trim: '#3f4b49', pattern: 'brick' } },
+    center: 'well',
+    banner: 'green',
+    fur: '#55625f',
+  },
+  frigg: {
+    floor: 'carpet',
+    look: { carpet: '#a9b9ca', carpet2: '#94a7bb', wall: { base: '#b9c5d1', trim: '#6c7f94', pattern: 'wood_panel' } },
+    center: 'loom',
+    banner: 'blue',
+    fur: '#dfe3e8',
+  },
+};
+
+export function layoutAsgardRoom(room: RoomInput, roomTheme: RoomTheme, cell: { rect: TileRect; side: Side }, owner?: string): AreaLayout {
+  const own = owner ? OWN_ROOMS[owner] : undefined;
+  const theme: RoomTheme = own ? { ...roomTheme, ...own.look } : roomTheme;
   const { rect, side } = cell;
   const rng = mulberry32((room.seed ^ 0xa59a) >>> 0);
   const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rng() * arr.length) % arr.length];
@@ -40,10 +72,11 @@ export function layoutAsgardRoom(room: RoomInput, theme: RoomTheme, cell: { rect
   const rug = (lx: number, ly: number, w: number, h: number, color: string, seed: number) => b.rug(fx(lx, w), ly, w, h, color, seed);
 
   // ---- piso de tábuas no tom da sala, peles sob as mesas e em volta da fogueira
-  b.floor('carpet', 0, 0, 16, 12, room.seed, theme.carpet, theme.carpet2);
+  b.floor(own?.floor ?? 'carpet', 0, 0, 16, 12, room.seed, theme.carpet, theme.carpet2);
   area.floorTint = theme.carpet;
   rug(1.5, 3.25, 7, 5.5, theme.carpet2, room.seed);
-  rug(9.4, 3.4, 5.2, 5.2, pick(FURS), room.seed + 2);
+  const centerFur = pick(FURS);
+  rug(9.4, 3.4, 5.2, 5.2, own?.fur ?? centerFur, room.seed + 2);
   rug(DOOR_X - 0.25, north ? 9.5 : 2, DOOR_W + 0.5, 1.25, pick(FURS), room.seed + 1);
 
   // ---- paredes (as mesmas da sala do Escritório)
@@ -66,7 +99,7 @@ export function layoutAsgardRoom(room: RoomInput, theme: RoomTheme, cell: { rect
   // ---- parede: placa entalhada, quadro de runas, disco de sol e lua, estandartes e escudo
   const signCx = north ? 8 : 10.5;
   area.signId = wallItem('sign', signCx, undefined, { order: 0.95 });
-  const banner = pick(BANNERS);
+  const banner = own?.banner ?? pick(BANNERS);
   if (north) {
     wallItem('whiteboard', 4.5, undefined, { order: 0.6 });
     wallItem('banner', 14.6, banner, { order: 0.45 });
@@ -95,8 +128,8 @@ export function layoutAsgardRoom(room: RoomInput, theme: RoomTheme, cell: { rect
     seat('desk', 'office_chair', lx, 7, 'up', theme.chairVariant, { dx: TILE / 2, deskId: front, rank: ranks[i], side: 'S', order: 0.6 + i * 0.03 });
   }
 
-  // ---- a fogueira, com banquetas em volta (os lugares extras dos subagentes)
-  furn('hearth', 11, 5, undefined, { order: 0.45 });
+  // ---- a fogueira (ou o poço, ou o tear), com banquetas em volta (os lugares extras dos subagentes)
+  furn(own?.center ?? 'hearth', 11, 5, undefined, { order: 0.45 });
   seat('stool', 'stool', 10, 5, 'right', undefined, { order: 0.65 });
   seat('stool', 'stool', 13, 6, 'left', undefined, { order: 0.66 });
   seat('stool', 'stool', 11, 4, 'down', undefined, { order: 0.67 });
@@ -106,7 +139,9 @@ export function layoutAsgardRoom(room: RoomInput, theme: RoomTheme, cell: { rect
   const shelfX = north ? 1 : 4;
   furn('bookshelf', shelfX, 2, undefined, { order: 0.25 });
   spot('shelf', shelfX, 3, 'up', { dx: 8, dy: -2 });
-  furn('barrel', 14, 2, undefined, { order: 0.2 });
+  if (owner === 'mimir') furn('runestone', 14, 2, undefined, { order: 0.2 });
+  else if (owner === 'frigg') furn('plant_small', 14, 2, 'flower', { order: 0.2 });
+  else furn('barrel', 14, 2, undefined, { order: 0.2 });
   if (north) spot('window', 12, 2, 'up', { dx: 12, dy: 1 });
   else furn('runestone', 1, 2, undefined, { order: 0.22 });
   furn('pillar', 14, 4, undefined, { order: 0.3 });
@@ -119,7 +154,12 @@ export function layoutAsgardRoom(room: RoomInput, theme: RoomTheme, cell: { rect
   seat('nook', 'beanbag', 4, 10, 'up', pick(['red', 'blue', 'yellow', 'green']), { order: 0.61 });
   furn('barrel', 1, 10, undefined, { order: 0.2 });
   furn('runestone', 5, 10, undefined, { order: 0.21 });
-  furn('weapon_rack', 13, 10, undefined, { order: 0.25 });
+  // no canto: o suporte de armas; na sala do Mímir, mais pergaminhos; na da Frigg, a roca e flores
+  if (owner === 'mimir') furn('bookshelf', 13, 10, undefined, { order: 0.25 });
+  else if (owner === 'frigg') {
+    furn('spinning_wheel', 13, 10, undefined, { order: 0.25 });
+    furn('plant_small', 14, 10, 'flower', { order: 0.255 });
+  } else furn('weapon_rack', 13, 10, undefined, { order: 0.25 });
   furn('cafe_table', 11, 10, undefined, { order: 0.26 });
   spot('stand', 11, 9, 'down', { dy: -1 });
 

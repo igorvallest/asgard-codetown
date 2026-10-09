@@ -153,6 +153,19 @@ export function canDismantle(r: { listed: boolean; occupants: number; lightOn: b
   return !r.listed && r.occupants === 0 && !r.lightOn && r.dark && r.unlistedForMs >= delayMs;
 }
 
+/** Quem abriu a sala: o `--agent` do principal mais antigo nela (o Asgard tem salas próprias do Mímir e da Frigg). */
+export function roomOwner(
+  agents: Iterable<{ roomId: string; kind: AgentKind; status: AgentStatus; startedAt: number; agent?: string }>,
+  roomId: string,
+): string | undefined {
+  let first: { startedAt: number; agent?: string } | undefined;
+  for (const a of agents) {
+    if (a.roomId !== roomId || a.kind !== 'main' || a.status === 'offline') continue;
+    if (!first || a.startedAt < first.startedAt) first = a;
+  }
+  return first?.agent;
+}
+
 /**
  * Nível de luz (0–1) da animação de acender/apagar.
  * Acender: pisca algumas vezes antes de firmar. Apagar: leve tremida e fade de ~0,6s.

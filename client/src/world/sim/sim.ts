@@ -22,6 +22,7 @@ import {
   isLongIdle,
   modeFor,
   pickIdleActivity,
+  roomOwner,
   shouldRun,
   type IdleActivity,
   type Mode,
@@ -154,7 +155,7 @@ export class Sim {
       listed.add(r.id);
       const rs = this.rooms.get(r.id);
       if (!rs) {
-        this.createRoom(r, first, now);
+        this.createRoom(r, first, now, roomOwner(snap.agents, r.id));
         layoutDirty = true;
         continue;
       }
@@ -222,7 +223,7 @@ export class Sim {
     if (this.lastSnapshot) this.applySnapshot(this.lastSnapshot, now);
   }
 
-  private createRoom(r: RoomInfo, first: boolean, now: number): RoomState {
+  private createRoom(r: RoomInfo, first: boolean, now: number, owner?: string): RoomState {
     let theme = FALLBACK_THEME;
     try {
       theme = this.art.roomTheme(r.seed) ?? FALLBACK_THEME;
@@ -231,8 +232,9 @@ export class Sim {
     }
     // a primeira vaga livre do prédio (o slot do servidor só dá a ordem de chegada)
     const slot = this.freeSlot();
-    const layout = this.plan.room({ id: r.id, slot, seed: r.seed }, theme);
+    const layout = this.plan.room({ id: r.id, slot, seed: r.seed }, theme, owner);
     const rs = new RoomState(r, theme, layout, first ? 'ready' : 'building', now, first, slot);
+    rs.owner = owner;
     this.rooms.set(r.id, rs);
     return rs;
   }
@@ -636,7 +638,7 @@ export class Sim {
   moveRoom(room: RoomState, slot: number, now: number): void {
     const before = room.layout;
     const ghostId = `${room.id}#mudança${++this.moveSeq}`;
-    const ghostLayout = this.plan.room({ id: ghostId, slot: room.slot, seed: room.seed }, room.theme);
+    const ghostLayout = this.plan.room({ id: ghostId, slot: room.slot, seed: room.seed }, room.theme, room.owner);
     const ghost = new RoomState({ ...room.info, id: ghostId, seed: room.seed }, room.theme, ghostLayout, 'ready', now, false, room.slot);
     ghost.ghost = true;
     ghost.listed = false;
@@ -652,7 +654,7 @@ export class Sim {
     });
 
     room.slot = slot;
-    room.layout = this.plan.room({ id: room.id, slot, seed: room.seed }, room.theme);
+    room.layout = this.plan.room({ id: room.id, slot, seed: room.seed }, room.theme, room.owner);
     room.setPhase('building', now);
     room.lightOn = false;
     room.lightAt = -1e9;

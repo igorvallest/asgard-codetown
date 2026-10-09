@@ -404,6 +404,7 @@ export class Lighting {
       for (const f of vis.furniture) {
         if (f.kind === 'floor_lamp') halo(lamp, f.ax, f.ay - 6, 92, 66, a);
         else if (f.kind === 'hearth') halo(lamp, f.ax, f.ay - 10, 150, 110, a);
+        else if (f.kind === 'well') halo(cool, f.ax, f.ay - 10, 120, 90, 0.9 * a);
         else if (f.kind === 'vending_machine') halo(cool, f.ax, f.ay + 4, 52, 34, 0.9 * a);
         else if (f.kind === 'arcade') halo(arcade, f.ax, f.ay + 4, 44, 30, 0.8 * a);
       }

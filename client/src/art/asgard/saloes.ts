@@ -2,6 +2,7 @@
 import * as B from './saloes-banheiro';
 import * as K from './saloes-cozinha';
 import * as L from './saloes-lazer';
+import * as S from './saloes-salas';
 import * as T from './saloes-trono';
 import type { FurnitureRenderers } from './types';
 
@@ -37,4 +38,8 @@ export const SALOES: FurnitureRenderers = {
   toilet_stall: (_v, st) => B.toiletStall(st),
   sink: () => B.sink(),
   mirror: () => B.mirror(),
+  // salas do Mímir e da Frigg
+  well: () => S.well(),
+  loom: () => S.loom(),
+  spinning_wheel: () => S.spinningWheel(),
 };

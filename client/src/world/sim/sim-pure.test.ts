@@ -12,6 +12,7 @@ import {
   lightLevel,
   modeFor,
   pickIdleActivity,
+  roomOwner,
   screenModeFor,
   shouldRun,
 } from './behavior';
@@ -176,6 +177,21 @@ describe('salas, luz e elevador', () => {
     expect(canDismantle({ ...base, occupants: 1 }, 1500)).toBe(false);
     expect(canDismantle({ ...base, lightOn: true }, 1500)).toBe(false);
     expect(canDismantle({ ...base, unlistedForMs: 100 }, 1500)).toBe(false);
+  });
+
+  it('dono da sala: o --agent do principal mais antigo nela', () => {
+    const a = (roomId: string, startedAt: number, agent?: string, extra: { kind?: 'main' | 'sub'; status?: 'working' | 'offline' } = {}) => ({
+      roomId,
+      startedAt,
+      agent,
+      kind: extra.kind ?? ('main' as const),
+      status: extra.status ?? ('working' as const),
+    });
+    expect(roomOwner([a('r', 20, 'odin'), a('r', 10, 'mimir'), a('x', 5, 'frigg')], 'r')).toBe('mimir');
+    // subagente e quem já saiu não contam; sem principal (ou sem --agent), sem dono
+    expect(roomOwner([a('r', 1, 'frigg', { kind: 'sub' }), a('r', 2, 'mimir', { status: 'offline' }), a('r', 9, 'odin')], 'r')).toBe('odin');
+    expect(roomOwner([a('r', 1)], 'r')).toBeUndefined();
+    expect(roomOwner([], 'r')).toBeUndefined();
   });
 
   it('luz pisca ao acender e apaga em ~0,6 s', () => {

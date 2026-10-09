@@ -96,6 +96,24 @@ describe('Asgard: sala de projeto', () => {
       expect(room.furniture.some((f) => f.kind === 'weapon_rack')).toBe(true);
     }
   });
+
+  it('quem abre a sala decide a cara: poço do Mímir, tear da Frigg, e os mesmos lugares da sala padrão', () => {
+    const room = (owner?: string) => asgardPlan.room({ id: '/proj/x', slot: 4, seed: 4242 }, theme, owner);
+    const places = (a: AreaLayout) => a.spots.map((s) => `${s.kind}@${s.tx},${s.ty}`).sort();
+    const base = room();
+    for (const [owner, center] of [
+      ['mimir', 'well'],
+      ['frigg', 'loom'],
+    ] as const) {
+      const own = room(owner);
+      expect(places(own), owner).toEqual(places(base));
+      expect(own.furniture.some((f) => f.kind === center), owner).toBe(true);
+      expect(own.furniture.some((f) => f.kind === 'hearth'), owner).toBe(false);
+    }
+    // os demais (Odin, sem --agent) ficam com a sala de sempre
+    expect(room('odin').furniture.some((f) => f.kind === 'hearth')).toBe(true);
+    expect(places(room('odin'))).toEqual(places(base));
+  });
 });
 
 describe('Asgard: áreas fixas e rodas sociais', () => {

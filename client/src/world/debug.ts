@@ -22,6 +22,8 @@ export interface SpawnOptions {
   /** Nome do projeto (sala). Padrão: um nome novo; se a sala existir, reaproveita. */
   project?: string;
   name?: string;
+  /** `--agent` da sessão (no Asgard: 'odin' vira holograma; 'mimir' e 'frigg' têm sala própria). */
+  agent?: string;
   /** Id da conta (AccountInfo.id). */
   account?: string;
   status?: AgentStatus;
@@ -228,6 +230,7 @@ export function createDebug(sim: Sim, renderer: Renderer, camera: Camera, onCame
         sessionId,
         status: opts.status ?? 'working',
         title: `Sessão de teste ${n}`,
+        ...(opts.agent ? { agent: opts.agent } : {}),
       });
       if (opts.shell) {
         const sh = opts.shell;

@@ -20,6 +20,8 @@ export class RoomState {
   /** Vaga no prédio escolhida pelo cliente (sem buracos; ver Sim.compact). Pode diferir de info.slot. */
   slot: number;
   theme: RoomTheme;
+  /** `--agent` de quem abriu a sala, fixado ao montá-la (ver roomOwner); o plano pode dar a ela uma cara própria. */
+  owner?: string;
   layout: AreaLayout;
   phase: RoomPhase;
   phaseAt: number;
