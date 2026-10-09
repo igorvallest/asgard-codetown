@@ -1,8 +1,8 @@
 // Mundo do escritório: liga a simulação (sim/), o desenho (render/), a câmera e a entrada,
 // e implementa o contrato WorldApi consumido pela UI.
-import * as artModule from '../art';
 import { TILE, type ArtModule } from '../art/api';
 import type { OfficeStore } from '../net/store';
+import { activeTheme } from '../theme';
 import { DEFAULT_WORLD_OPTIONS, type Selection, type SocialEvent, type SoundCue, type WorldApi, type WorldOptions, type WorldPlayback } from './api';
 import { loadWorldAssets, type WorldAssets } from './assets';
 import { Camera, overviewFrame } from './camera';
@@ -19,9 +19,8 @@ import { SoundCues } from './sound-cues';
 export * from './api';
 export type { WorldDebug } from './debug';
 
-const art: ArtModule = artModule;
-
 export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore): WorldApi & { debug: WorldDebug } {
+  const art: ArtModule = activeTheme().art;
   let options: WorldOptions = { ...DEFAULT_WORLD_OPTIONS };
   const camera = new Camera();
   // Simulação e desenho são recriados quando o timelapse entra, pula ou sai (rebuild).

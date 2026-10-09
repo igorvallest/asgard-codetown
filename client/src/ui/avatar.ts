@@ -1,6 +1,6 @@
 // Avatares dos agentes para a UI: gerados pelo módulo de arte uma única vez e reaproveitados como data URL.
 import type { AgentInfo } from '../../../shared/types';
-import { avatarCanvas } from '../art';
+import { activeTheme } from '../theme';
 import { h } from './dom';
 
 const cache = new Map<string, { url: string; w: number; h: number }>();
@@ -11,7 +11,7 @@ function avatarData(agent: AvatarSource, scale: number): { url: string; w: numbe
   const key = `${agent.seed}|${agent.look}|${agent.kind}|${scale}`;
   let entry = cache.get(key);
   if (!entry) {
-    const c = avatarCanvas(agent.seed, { look: agent.look, sub: agent.kind === 'sub', scale });
+    const c = activeTheme().art.avatarCanvas(agent.seed, { look: agent.look, sub: agent.kind === 'sub', scale });
     entry = { url: c.toDataURL('image/png'), w: c.width, h: c.height };
     cache.set(key, entry);
   }

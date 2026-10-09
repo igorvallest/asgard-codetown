@@ -1,6 +1,6 @@
 // Barra lateral: busca, filtro por conta e a lista de salas -> agentes -> subagentes.
 import type { AccountInfo, AgentInfo } from '../../../shared/types';
-import { roomTheme } from '../art';
+import { activeTheme } from '../theme';
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, KeyedList, setAttr, setHidden, setStyleVar, setText, setTitle } from './dom';
 import { plural, shortPath } from './format';
@@ -199,7 +199,7 @@ export class Sidebar implements UiComponent {
     );
     head.addEventListener('click', () => this.ctx.select({ type: 'room', id: g.room.id }, { focus: true }));
     try {
-      setStyleVar(head, '--room', roomTheme(g.room.seed).accent);
+      setStyleVar(head, '--room', activeTheme().art.roomTheme(g.room.seed).accent);
     } catch {
       // Sem tema: mantém a cor padrão do CSS.
     }

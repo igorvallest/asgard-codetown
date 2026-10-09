@@ -10,6 +10,12 @@ do meio (0.**3**.0).
 
 ## [Não lançado]
 
+### Adicionado
+
+- **Temas.** A cara do escritório (arte do mundo, avatares e cores dos painéis) agora vem de um tema, escolhido em
+  **Configurações › Escritório › Tema** ou por `?tema=<id>` na URL. Por enquanto só existe o Escritório, o visual de
+  sempre; um tema novo nasce de outro e troca só o que quiser.
+
 ### Corrigido
 
 - **Subagentes com nome (teammates) no escritório.** O subagente lançado com nome no Claude Code (que vira teammate)

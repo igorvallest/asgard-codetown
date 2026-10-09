@@ -1,7 +1,7 @@
 // Gaveta de detalhes (direita): agente ou sala selecionados. Agente do Codex: selo "Codex", textos dele (onde
 // responder, o terminal, a aprovação no lugar do modo de permissão, sem custo) e a dica dos hooks do Codex.
 import type { Activity, AgentInfo, FeedItem, RoomInfo, ShellJob, TaskItem } from '../../../shared/types';
-import { roomTheme } from '../art';
+import { activeTheme } from '../theme';
 import { createAvatarPlaceholder, updateAvatar } from './avatar';
 import { MessageComposer } from './composer';
 import type { UiComponent, UiContext } from './context';
@@ -785,7 +785,7 @@ class RoomView {
     setText(this.path, shortPath(r.path));
     setTitle(this.path, r.path);
     try {
-      setStyleVar(this.swatch, '--room', roomTheme(r.seed).accent);
+      setStyleVar(this.swatch, '--room', activeTheme().art.roomTheme(r.seed).accent);
     } catch {
       // Sem tema: cor padrão.
     }
