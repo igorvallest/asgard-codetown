@@ -2,13 +2,13 @@
 import type { UiComponent, UiContext } from './context';
 import { h, iconButton, setAttr, setHidden, setText, setTitle, setVariant } from './dom';
 import { formatDuration, formatInt } from './format';
-import { FALLBACK_MARK, ICONS } from './icons';
+import { ICONS } from './icons';
 import { computeCounters, shellLine, shellWaitIn, shellWaitingAgents, waitingAgents, type Counters } from './model';
 import { TIMELAPSE_ICONS } from './timelapse';
 import { focusPermission, nextPermissionAgent, permissionAgents } from './permission';
 import { UsageCards } from './usage';
 import { VersionChip } from './version';
-import { wordmark } from './widgets';
+import { brandMark, wordmark } from './widgets';
 
 interface CounterRefs {
   el: HTMLElement;
@@ -46,13 +46,8 @@ export class TopBar implements UiComponent {
   readonly panelGroup: HTMLElement;
 
   constructor(private ctx: UiContext) {
-    // Marca: usa o logo do projeto se existir; senão, o prédio em pixels.
-    const mark = h('span', { class: 'ui-brand__mark' });
-    const logo = h('img', { attrs: { src: '/assets/brand/logo-mark.png', srcset: '/assets/brand/logo-mark@4x.png 4x', alt: '', width: 32, height: 32, draggable: 'false' } });
-    logo.addEventListener('error', () => {
-      mark.innerHTML = FALLBACK_MARK;
-    });
-    mark.append(logo);
+    // Marca: a do tema; sem ela, o logo do projeto (ou o prédio em pixels, se a imagem faltar).
+    const mark = brandMark(32, '/assets/brand/logo-mark.png', '/assets/brand/logo-mark@4x.png 4x');
 
     this.pillText = h('span', { class: 'ui-pill__text' });
     this.pill = h('span', { class: 'ui-pill', role: 'status', attrs: { 'aria-live': 'polite' } }, h('span', { class: 'ui-pill__dot' }), this.pillText);

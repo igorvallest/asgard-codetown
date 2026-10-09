@@ -382,7 +382,7 @@ export class Sim {
   private spawn(a: AgentInfo, first: boolean, now: number): Character | null {
     let appearance;
     try {
-      appearance = this.art.appearanceFromSeed(a.seed, { look: a.look, sub: a.kind === 'sub' });
+      appearance = this.art.appearanceFromSeed(a.seed, { look: a.look, sub: a.kind === 'sub', agent: a.agent });
     } catch {
       return null;
     }

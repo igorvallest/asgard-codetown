@@ -3,10 +3,12 @@
 // aba quando há agentes esperando você.
 import type { Notice } from '../../../shared/types';
 import type { SoundBoard } from '../audio/board';
+import { activeTheme } from '../theme';
 import type { UiComponent, UiContext } from './context';
 import { computeCounters } from './model';
 
-const BASE_TITLE = 'Habblaud';
+/** Nome da aba: o da marca do tema; o Escritório não tem marca própria e fica com o do Habblaud. */
+const baseTitle = (): string => activeTheme().brand?.name ?? 'Habblaud';
 
 export type NotificationState = 'unsupported' | 'default' | 'granted' | 'denied';
 
@@ -39,7 +41,8 @@ export class Notifier implements UiComponent {
   render(): void {
     // Ao vivo, mesmo durante o timelapse: o título da aba avisa quem precisa de você agora.
     const waiting = computeCounters(this.ctx.store.liveSnapshot).waiting;
-    const title = waiting > 0 ? `(${waiting}) ${BASE_TITLE}` : BASE_TITLE;
+    const base = baseTitle();
+    const title = waiting > 0 ? `(${waiting}) ${base}` : base;
     if (title !== this.lastTitle) {
       this.lastTitle = title;
       document.title = title;
@@ -53,7 +56,7 @@ export class Notifier implements UiComponent {
     else if (n.level === 'success') this.sounds.play('pop');
     if (n.level === 'alert' && prefs.browserNotifications && document.hidden && notificationState() === 'granted') {
       try {
-        const notification = new Notification('Habblaud — precisa de você', {
+        const notification = new Notification(`${baseTitle()} — precisa de você`, {
           body: n.text,
           tag: n.agentId ?? n.id,
           icon: '/assets/brand/favicon-32.png',

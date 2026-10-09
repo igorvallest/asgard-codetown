@@ -43,6 +43,10 @@ describe('temas', () => {
     expect(novo.art.roomTheme(1)).toBe('novo');
     expect(novo.art.iconSprite('alert')).toBe('ícone');
     expect(base.art.roomTheme(1)).toBe('base');
+    // quadros prontos do Escritório: herdados até um tema desligar
+    expect(novo.worldAssets).toBeUndefined();
+    const semQuadros = extendTheme(base, { id: 'sem', name: 'Sem', worldAssets: false });
+    expect(extendTheme(semQuadros, { id: 'neto', name: 'Neto' }).worldAssets).toBe(false);
   });
 
   it('applyThemeUi grava só as cores que o tema define', () => {

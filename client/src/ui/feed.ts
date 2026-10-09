@@ -11,7 +11,7 @@ import { createAccountChip, updateAccountChip } from './widgets';
 
 const VISIBLE = 50;
 
-type AgentMeta = Pick<AgentInfo, 'seed' | 'look' | 'kind' | 'account'>;
+type AgentMeta = Pick<AgentInfo, 'seed' | 'look' | 'kind' | 'account' | 'agent'>;
 
 export class FeedPanel implements UiComponent {
   readonly el: HTMLElement;
@@ -90,7 +90,7 @@ export class FeedPanel implements UiComponent {
   render(): void {
     for (const a of this.ctx.store.snapshot?.agents ?? []) {
       const m = this.meta.get(a.id);
-      if (!m || m.seed !== a.seed || m.account !== a.account) this.meta.set(a.id, { seed: a.seed, look: a.look, kind: a.kind, account: a.account });
+      if (!m || m.seed !== a.seed || m.account !== a.account) this.meta.set(a.id, { seed: a.seed, look: a.look, kind: a.kind, account: a.account, agent: a.agent });
     }
     const open = this.ctx.isPanelOpen('feed');
     const paused = this.hovering || this.scrolledUp;
@@ -211,7 +211,7 @@ export class FeedPanel implements UiComponent {
   private metaFromStore(id: string): AgentMeta | undefined {
     const a = this.ctx.agent(id);
     if (!a) return undefined;
-    const m = { seed: a.seed, look: a.look, kind: a.kind, account: a.account };
+    const m = { seed: a.seed, look: a.look, kind: a.kind, account: a.account, agent: a.agent };
     this.meta.set(id, m);
     return m;
   }

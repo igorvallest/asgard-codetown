@@ -27,4 +27,8 @@ export interface Theme {
   building: BuildingPlan;
   /** Cores dos painéis; o que faltar fica como em ui/styles.css. */
   ui?: Partial<Record<UiVar, string>>;
+  /** Marca no topo e na abertura (SVGs em pixel art); ausente = a do Habblaud. */
+  brand?: { name: string; wordmark: string; mark: string };
+  /** false = sem os quadros e a placa prontos de /assets (scripts/assets), que têm a cara do Escritório. */
+  worldAssets?: boolean;
 }

@@ -1,6 +1,6 @@
 // Plano do prédio: o que o tema decide sobre a planta (áreas fixas, onde fica cada vaga de sala, exterior
 // e o papel de cada área). O mundo só conversa com o prédio por aqui; o Escritório é o `officePlan`.
-import type { RoomTheme } from '../../art/api';
+import type { Dir, Pose, RoomTheme } from '../../art/api';
 import { COL_W, CORE_COLS, CORRIDOR_H, CORRIDOR_Y, SOUTH_Y, TILE } from '../constants';
 import { assembleBuilding, type BuildingLayout } from './building';
 import { CAFE_ID, LOUNGE_ID, RECEPTION_ID, RESTROOM_ID } from './core';
@@ -38,6 +38,23 @@ export interface FacadeGlow {
   a: number;
 }
 
+/**
+ * Personagem decorativo fixo (não é sessão nem subagente): fica sempre no mesmo lugar, só respirando na pose.
+ * A aparência vem da arte do tema, por `agent` (ex.: o Odin no trono de Asgard).
+ */
+export interface PlanNpc {
+  id: string;
+  agent: string;
+  seed: number;
+  /** Pés, em px de mundo. */
+  x: number;
+  y: number;
+  /** Profundidade (px de mundo) para ordenar com móveis e personagens. */
+  sortY: number;
+  dir: Dir;
+  pose: Pose;
+}
+
 /** Tudo o que fica fora das salas: terreno, cascas das vagas vazias e detalhes da entrada. */
 export interface PlanOutside {
   exterior: ExteriorLayout;
@@ -66,6 +83,8 @@ export interface BuildingPlan {
   readonly roles: PlanRoles;
   /** Grupo de um tile para racionar balões na visão geral (uma sala, um trecho do corredor...). */
   bucketOf(tx: number, ty: number): string;
+  /** Personagens decorativos fixos do prédio. */
+  readonly npcs?: readonly PlanNpc[];
 }
 
 export const officePlan: BuildingPlan = {

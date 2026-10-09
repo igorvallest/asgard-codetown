@@ -1,22 +1,11 @@
 // Camadas de estado: splash de carregamento, escritório vazio e aviso de conexão perdida.
 import type { UiComponent, UiContext } from './context';
 import { h, prefersReducedMotion, setHidden, setText } from './dom';
-import { FALLBACK_MARK } from './icons';
 import { emptyOfficeHint } from './provider';
-import { wordmark } from './widgets';
+import { brandMark, wordmark } from './widgets';
 
 /** Depois de quanto tempo sem conexão o aviso aparece. */
 const DISCONNECTED_BANNER_MS = 8_000;
-
-function brandMark(size: number): HTMLElement {
-  const mark = h('span', { class: 'ui-brand__mark' });
-  const img = h('img', { attrs: { src: '/assets/brand/logo-mark@4x.png', alt: '', width: size, height: size, draggable: 'false' } });
-  img.addEventListener('error', () => {
-    mark.innerHTML = FALLBACK_MARK;
-  });
-  mark.append(img);
-  return mark;
-}
 
 export class Splash implements UiComponent {
   readonly el: HTMLElement;

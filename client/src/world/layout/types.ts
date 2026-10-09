@@ -156,7 +156,9 @@ export interface AreaLayout {
 
 /** Elemento decorativo externo (árvore, arbusto, poste...) desenhado pelo próprio mundo. */
 export interface ExteriorProp {
-  kind: 'tree' | 'pine' | 'bush' | 'flowers' | 'lamp' | 'bench' | 'rock' | 'hedge' | 'parasol' | 'totem' | 'paving';
+  kind: 'tree' | 'pine' | 'bush' | 'flowers' | 'lamp' | 'bench' | 'rock' | 'hedge' | 'parasol' | 'totem' | 'paving'
+    // terreno de Asgard (a arte do tema desenha; sem ela, o mundo usa o pinheiro e a pedra)
+    | 'snowpine' | 'boulder' | 'runestone';
   /** px de mundo: ponto central inferior (base). */
   x: number;
   y: number;

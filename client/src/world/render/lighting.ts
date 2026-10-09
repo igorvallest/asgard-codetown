@@ -403,6 +403,7 @@ export class Lighting {
       const a = vis.room ? k * l : k;
       for (const f of vis.furniture) {
         if (f.kind === 'floor_lamp') halo(lamp, f.ax, f.ay - 6, 92, 66, a);
+        else if (f.kind === 'hearth') halo(lamp, f.ax, f.ay - 10, 150, 110, a);
         else if (f.kind === 'vending_machine') halo(cool, f.ax, f.ay + 4, 52, 34, 0.9 * a);
         else if (f.kind === 'arcade') halo(arcade, f.ax, f.ay + 4, 44, 30, 0.8 * a);
       }
@@ -476,7 +477,7 @@ export class Lighting {
           // quem trabalha à noite fica com o rosto iluminado pela tela
           ctx.globalAlpha = (mode === 'idle' ? 0.2 : 0.35) * k;
           ctx.drawImage(cool, Math.round(f.ax - 24), Math.round(f.ay - 34));
-        } else if (f.kind === 'floor_lamp' && n > 0.2 && (!room || room.lightOn)) {
+        } else if ((f.kind === 'floor_lamp' || f.kind === 'hearth') && n > 0.2 && (!room || room.lightOn)) {
           // bulbo aceso (o halo no chão está no mapa de luz)
           const g = this.lampHead(f);
           ctx.globalAlpha = 0.5 * n;

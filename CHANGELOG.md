@@ -16,6 +16,12 @@ do meio (0.**3**.0).
   um tema, definido no servidor por `HABBLAUD_TEMA` (ou `npm run dev -- --tema <nome>`) e mostrado em
   **Configurações › Escritório**; `?tema=<id>` na URL troca só o visual, para testar. O padrão é o Escritório de
   sempre; um tema novo nasce de outro e troca só o que quiser.
+- **Tema Asgard** (`HABBLAUD_TEMA=asgard`). O escritório vira o salão dos deuses: o Odin no trono, no topo, com a
+  Bifrost por onde os agentes chegam e vão embora; logo abaixo, cozinha, salão e banheiro; as salas de projeto descem
+  de 3 em 3, entre gramados com neve e uma estrada de pedra. Os computadores viram pergaminhos com runas, e as salas
+  ganham fogueira, estandartes, escudos e barris. Quem abre o Claude Code com `--agent odin` aparece como um holograma
+  do Odin, `--agent mimir` e `--agent frigg` como o Mímir e a Frigg, e os demais agentes e subagentes ganham nome e
+  visual nórdicos.
 
 ### Corrigido
 

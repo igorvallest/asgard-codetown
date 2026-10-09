@@ -45,6 +45,11 @@ const ACC_COLORS: Record<Accessory, readonly string[]> = {
   beanie: ['#e2604f', '#efb54a', '#4bab72', '#8d66cf', '#3d4352', '#36b0b0'],
   earrings: ['#f2c14e', '#d9dde3'],
   bow: ['#e2604f', '#e47aa8', '#efb54a', '#4a86d8', '#8d66cf'],
+  // acessórios do tema Asgard (o sorteio do Escritório nunca os escolhe)
+  eyepatch: ['#1d1b1a'],
+  helmet: ['#9aa1a8'],
+  circlet: ['#d4af37'],
+  hood: ['#3f5b3a', '#34507a', '#6b4a2f', '#5a5560'],
 };
 const LANYARDS = ['#f2b33d', '#e2604f', '#4a86d8', '#4bab72', '#8d66cf', '#36b0b0'] as const;
 
@@ -66,9 +71,10 @@ const TOP_W: Record<'f' | 'm', Weights<TopStyle>> = {
   f: { tshirt: 17, hoodie: 14, shirt_tie: 5, sweater: 14, jacket: 12, blouse: 20, polo: 8 },
 };
 
+// Os acessórios de Asgard entram com peso 0 antes do último item: o sorteio do Escritório fica idêntico.
 const ACC_W: Record<'f' | 'm', Weights<Accessory>> = {
-  m: { none: 40, glasses: 18, sunglasses: 4, headphones: 13, cap: 7, beanie: 6, earrings: 2, bow: 0.3 },
-  f: { none: 36, glasses: 16, sunglasses: 4, headphones: 11, cap: 4, beanie: 5, earrings: 13, bow: 7 },
+  m: { none: 40, glasses: 18, sunglasses: 4, headphones: 13, cap: 7, beanie: 6, earrings: 2, eyepatch: 0, helmet: 0, circlet: 0, hood: 0, bow: 0.3 },
+  f: { none: 36, glasses: 16, sunglasses: 4, headphones: 11, cap: 4, beanie: 5, earrings: 13, eyepatch: 0, helmet: 0, circlet: 0, hood: 0, bow: 7 },
 };
 
 const FACIAL_W: Weights<FacialHair> = { none: 62, stubble: 12, beard: 13, mustache: 7, goatee: 6 };

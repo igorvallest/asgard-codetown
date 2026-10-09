@@ -1,12 +1,12 @@
 // Desenho do mundo por frame: camada externa -> pisos -> paredes/itens de parede -> entidades
 // ordenadas por profundidade -> luz/escuridão -> ícones. A passada em espaço de tela (texto
 // nítido) fica em overlay.ts.
-import { TILE, type ArtModule, type CharacterFrameRequest, type IconName, type ScreenMode, type Sprite } from '../../art/api';
+import { TILE, type Appearance, type ArtModule, type CharacterFrameRequest, type IconName, type ScreenMode, type Sprite } from '../../art/api';
 import type { WorldOptions } from '../api';
 import type { WorldAssets } from '../assets';
 import type { Camera } from '../camera';
 import type { ExteriorLayout, SlotShell } from '../layout/exterior';
-import type { FacadeGlow, PlanOutside } from '../layout/plan';
+import type { FacadeGlow, PlanNpc, PlanOutside } from '../layout/plan';
 import type { ExteriorProp } from '../layout/types';
 import { screenModeFor } from '../sim/behavior';
 import type { Character } from '../sim/character';
@@ -28,12 +28,13 @@ const enum K {
   Char,
   Prop,
   Car,
+  Npc,
 }
 
 interface Ent {
   k: K;
   y: number;
-  ref: FurnVis | Character | ExteriorProp | Car | null;
+  ref: FurnVis | Character | ExteriorProp | Car | PlanNpc | null;
   area: AreaVis | null;
   scale: number;
 }
@@ -472,6 +473,7 @@ export class Renderer {
       }
     }
     for (const car of this.cars) if (visible(car.x - 24, car.y - 24, 48, 28)) push(K.Car, car.y, car, null, 1);
+    for (const npc of this.sim.plan.npcs ?? []) if (visible(npc.x - 16, npc.y - 36, 32, 40)) push(K.Npc, npc.sortY, npc, null, 1);
     ents.sort((a, b) => a.y - b.y || a.k - b.k);
 
     this.iconCount = 0;
@@ -491,6 +493,9 @@ export class Renderer {
           break;
         case K.Car:
           this.drawCar(e.ref as Car);
+          break;
+        case K.Npc:
+          this.drawNpc(e.ref as PlanNpc, now);
           break;
       }
     }
@@ -913,6 +918,19 @@ export class Renderer {
     this.iconCount++;
   }
 
+  private readonly npcLooks = new Map<string, Appearance>();
+
+  /** Personagem decorativo do plano do prédio (ex.: o Odin no trono): parado na pose, só a animação dela. */
+  private drawNpc(n: PlanNpc, now: number): void {
+    let appearance = this.npcLooks.get(n.id);
+    if (!appearance) {
+      appearance = this.art.appearanceFromSeed(n.seed, { agent: n.agent });
+      this.npcLooks.set(n.id, appearance);
+    }
+    const s = this.charSprite({ appearance, dir: n.dir, pose: n.pose, frame: 0, seated: n.pose === 'sit' }, now);
+    this.ctx.drawImage(s.canvas, Math.round(n.x - s.ax), Math.round(n.y - s.ay));
+  }
+
   /** Sprite do personagem no frame da animação (tolera arte sem a pose: contagem/duração inválidas). */
   private charSprite(req: CharacterFrameRequest, animT: number): Sprite {
     const { art } = this;
@@ -1089,7 +1107,7 @@ export class Renderer {
       this.ctx.globalAlpha = 1;
       return;
     }
-    const s = propSprite(prop);
+    const s = this.art.propSprite?.(prop.kind, prop.seed) ?? propSprite(prop);
     if (alpha < 1) this.ctx.globalAlpha = alpha;
     this.ctx.drawImage(s.canvas, Math.round(prop.x - s.ax), Math.round(prop.y - s.ay));
     this.ctx.globalAlpha = 1;

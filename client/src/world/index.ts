@@ -211,11 +211,14 @@ export function createWorld(canvas: HTMLCanvasElement, store: OfficeStore): Worl
   const offSnapshot = store.on('snapshot', onSnapshot);
   if (store.snapshot) onSnapshot();
 
-  void loadWorldAssets(abort.signal).then((a) => {
-    if (!a) return;
-    assets = a;
-    renderer.setAssets(a);
-  });
+  // quadros e placa prontos (scripts/assets): só nos temas que usam a cara do Escritório
+  if (activeTheme().worldAssets !== false) {
+    void loadWorldAssets(abort.signal).then((a) => {
+      if (!a) return;
+      assets = a;
+      renderer.setAssets(a);
+    });
+  }
 
   // medições de texto em cache: refaz quando alguma fonte termina de carregar
   if (document.fonts) document.fonts.addEventListener?.('loadingdone', () => overlay.resetCaches());

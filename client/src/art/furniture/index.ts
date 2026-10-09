@@ -125,6 +125,24 @@ function build(kind: FurnitureKind, variant: string | undefined, state: number, 
       return C.receptionDesk(seed);
     case 'bench':
       return C.bench();
+    // Peças do tema Asgard: o Escritório não as usa (quem desenha as de verdade é art/asgard); aqui só um
+    // equivalente para nada quebrar se aparecerem.
+    case 'throne':
+      return C.armchair('down');
+    case 'hearth':
+      return C.coffeeTable(seed);
+    case 'pillar':
+      return O.plantTall('ficus', seed);
+    case 'weapon_rack':
+      return O.bookshelf(seed);
+    case 'barrel':
+      return O.trashBin();
+    case 'runestone':
+      return O.plantSmall('succulent', seed);
+    case 'banner':
+      return W.poster('code');
+    case 'wolf':
+      return C.beanbag('blue');
   }
 }
 

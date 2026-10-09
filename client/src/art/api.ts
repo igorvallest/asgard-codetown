@@ -70,7 +70,12 @@ export type HairStyle =
 
 export type TopStyle = 'tshirt' | 'hoodie' | 'shirt_tie' | 'sweater' | 'jacket' | 'blouse' | 'polo';
 
-export type Accessory = 'none' | 'glasses' | 'sunglasses' | 'headphones' | 'cap' | 'beanie' | 'earrings' | 'bow';
+export type Accessory = 'none' | 'glasses' | 'sunglasses' | 'headphones' | 'cap' | 'beanie' | 'earrings' | 'bow'
+  // --- Asgard (aditivo)
+  | 'eyepatch' // tapa-olho sobre o olho esquerdo do personagem, com a tira em volta da cabeça (Odin)
+  | 'helmet' // elmo nórdico redondo de ferro, com protetor de nariz (sem chifres)
+  | 'circlet' // diadema dourado na testa, com uma pedra no meio
+  | 'hood'; // capuz cobrindo o cabelo e caindo sobre os ombros
 
 export interface Appearance {
   skin: string;
@@ -91,6 +96,8 @@ export interface Appearance {
   facialHair?: 'none' | 'stubble' | 'beard' | 'mustache' | 'goatee';
   /** (Opcional, aditivo) Parte de baixo da roupa. Ausente = calça. */
   bottomStyle?: 'pants' | 'shorts' | 'skirt';
+  /** (Opcional, aditivo) Holograma: desenhado translúcido e azulado (as manifestações do Odin no tema Asgard). */
+  hologram?: boolean;
 }
 
 export interface Rect {
@@ -185,7 +192,16 @@ export type FurnitureKind =
   | 'sink' // 1x1 pia com gabinete (encostada na parede norte; use 'mirror' na parede acima).
   // --- recepção
   | 'reception_desk' // 3x1 balcão de recepção.
-  | 'bench'; // 2x1 banco de espera (assento, olhando para baixo).
+  | 'bench' // 2x1 banco de espera (assento, olhando para baixo).
+  // --- Asgard (aditivo)
+  | 'throne' // 2x1 trono de Odin, de frente para a câmera (decorativo: ninguém da sessão senta nele).
+  | 'hearth' // 2x2 fogueira de pedra no chão do salão, com chamas. rects.glow = centro do fogo.
+  | 'pillar' // 1x1 coluna de madeira entalhada com cintas de ferro (alta, até ~3 tiles).
+  | 'weapon_rack' // 2x1 suporte com machados, lanças e um escudo, encostado na parede.
+  | 'barrel' // 1x1 barril de carvalho com aros de ferro.
+  | 'runestone' // 1x1 pedra rúnica em pé, com runas entalhadas.
+  | 'banner' // 1 tile (parede): estandarte de pano pendurado. variants: 'red' | 'blue' | 'green' | 'gold'
+  | 'wolf'; // 1x1 lobo cinza deitado (Geri e Freki, aos pés do trono). variants: 'right' | 'left' = para onde olha
 
 export interface FurnitureDef {
   mount: 'floor' | 'wall';
@@ -259,6 +275,14 @@ export const FURNITURE: Readonly<Record<FurnitureKind, FurnitureDef>> = {
   sink: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true },
   reception_desk: { mount: 'floor', footprint: { w: 3, h: 1 }, blocks: true },
   bench: { mount: 'floor', footprint: { w: 2, h: 1 }, blocks: false, seat: true },
+  throne: { mount: 'floor', footprint: { w: 2, h: 1 }, blocks: true },
+  hearth: { mount: 'floor', footprint: { w: 2, h: 2 }, blocks: true },
+  pillar: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true },
+  weapon_rack: { mount: 'floor', footprint: { w: 2, h: 1 }, blocks: true },
+  barrel: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true },
+  runestone: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true },
+  banner: { mount: 'wall', footprint: { w: 1, h: 0 }, blocks: false, variants: ['red', 'blue', 'green', 'gold'] },
+  wolf: { mount: 'floor', footprint: { w: 1, h: 1 }, blocks: true, variants: ['right', 'left'] },
 };
 
 export type FloorKind =
@@ -332,7 +356,8 @@ export type IconName = 'alert' | 'question' | 'zzz' | 'check' | 'heart' | 'coffe
 
 /** Assinatura que art/index.ts deve exportar (o mundo e a UI dependem disto). */
 export interface ArtModule {
-  appearanceFromSeed(seed: number, opts?: { look?: 'f' | 'm'; sub?: boolean }): Appearance;
+  /** `agent` (aditivo) = `claude --agent` do principal: o tema pode dar a ele uma figura própria. */
+  appearanceFromSeed(seed: number, opts?: { look?: 'f' | 'm'; sub?: boolean; agent?: string }): Appearance;
   /** Ancoragem: (ax, ay) = centro dos pés (ponto no chão). Personagem ocupa ~14–18px de largura e ~24–28px de altura. */
   characterSprite(req: CharacterFrameRequest): Sprite;
   poseFrameCount(pose: Pose): number;
@@ -368,6 +393,11 @@ export interface ArtModule {
    * usa para a torcida comemorar junto com a TV.
    */
   footballLance?(t: number, seed: number): { lance: number; progress: number; right: boolean; period: number; goalAt: number };
+  /**
+   * (Opcional, aditivo) Elemento do terreno externo (árvore, pinheiro, pedra, arbusto, flores, pedra rúnica...) no
+   * lugar do desenho padrão do mundo; `null` = o mundo desenha. Ancoragem: (ax, ay) = centro da base, no chão.
+   */
+  propSprite?(kind: string, seed: number): Sprite | null;
   /** Avatar (cabeça + ombros) ampliado para a UI. */
-  avatarCanvas(seed: number, opts?: { look?: 'f' | 'm'; sub?: boolean; scale?: number }): HTMLCanvasElement;
+  avatarCanvas(seed: number, opts?: { look?: 'f' | 'm'; sub?: boolean; scale?: number; agent?: string }): HTMLCanvasElement;
 }

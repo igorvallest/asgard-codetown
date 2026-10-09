@@ -79,6 +79,25 @@ describe('Asgard: prédio', () => {
   }
 });
 
+describe('Asgard: sala de projeto', () => {
+  it('mesmo contrato da sala do Escritório (mesas, lugares extras, em pé, interruptor, quadro e placa), nos dois lados', () => {
+    for (const slot of [0, 1, 3, 4, 7]) {
+      const room = roomsFor([slot])[0];
+      const desks = room.spots.filter((s) => s.kind === 'desk');
+      expect(desks).toHaveLength(6);
+      expect(new Set(desks.map((d) => d.rank))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+      expect(desks.filter((d) => d.side === 'N')).toHaveLength(3);
+      expect(room.spots.filter((s) => s.kind === 'stool' || s.kind === 'nook').length).toBeGreaterThanOrEqual(4);
+      expect(room.spots.filter((s) => s.kind === 'stand').length).toBeGreaterThanOrEqual(3);
+      expect(room.spots.filter((s) => s.kind === 'switch')).toHaveLength(1);
+      for (const kind of ['whiteboard', 'sign', 'light_switch'] as const) expect(room.wallItems.some((w) => w.kind === kind), kind).toBe(true);
+      // a cenografia nórdica: fogueira e suporte de armas
+      expect(room.furniture.some((f) => f.kind === 'hearth')).toBe(true);
+      expect(room.furniture.some((f) => f.kind === 'weapon_rack')).toBe(true);
+    }
+  });
+});
+
 describe('Asgard: áreas fixas e rodas sociais', () => {
   const fixed = asgardFixedAreas();
   const area = (id: string) => fixed.find((a) => a.id === id)!;

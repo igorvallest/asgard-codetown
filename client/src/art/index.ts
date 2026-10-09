@@ -38,7 +38,7 @@ export { drawBoard, drawClock, drawScreen, drawWindowView, footballLance };
 
 // ------------------------------------------------------------------ canvas e cache
 
-function toCanvas(buf: PixelBuf): HTMLCanvasElement {
+export function toCanvas(buf: PixelBuf): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = Math.max(1, buf.w);
   c.height = Math.max(1, buf.h);
@@ -47,7 +47,7 @@ function toCanvas(buf: PixelBuf): HTMLCanvasElement {
   return c;
 }
 
-function toSprite(s: BufSprite): Sprite {
+export function toSprite(s: BufSprite): Sprite {
   return { canvas: toCanvas(s.buf), ax: s.ax, ay: s.ay, rects: s.rects };
 }
 

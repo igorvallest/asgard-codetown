@@ -855,6 +855,82 @@ function drawAccessory(dc: Dc): void {
       else b.stamp(rows, ox + 7, oy + 1, pal);
       break;
     }
+    case 'eyepatch': {
+      // Tapa-olho sobre o olho esquerdo do personagem (à direita de quem olha) e a tira atravessando a testa.
+      const strap = shade(it.base, 0.18);
+      if (v === 'down') {
+        for (let cx = 1; cx <= 12; cx++) put(cx, cx <= 4 ? 8 : 9, strap);
+        for (let cy = 10; cy <= 11; cy++) for (let cx = 8; cx <= 10; cx++) put(cx, cy, it.dd);
+        put(8, 10, it.base);
+      } else if (v === 'side') {
+        for (let cx = 5; cx <= 10; cx++) put(cx, 9, strap);
+        for (let cy = 10; cy <= 11; cy++) for (let cx = 2; cx <= 4; cx++) put(cx, cy, it.dd);
+        put(2, 10, it.base);
+      } else {
+        for (let cx = 1; cx <= 12; cx++) put(cx, 9, strap);
+      }
+      break;
+    }
+    case 'helmet': {
+      // Elmo redondo de ferro com faixa rebitada; de frente, o protetor de nariz desce até a ponta do nariz.
+      const pal = { o: it.base, h: it.lt, H: it.hi, d: it.dk, b: it.dd, r: shade(it.lt, 0.2) };
+      if (v === 'side') {
+        b.stamp(['....oooooo....', '..oohhhooooo..', '.ohhHhhoooood.', '.ohhhhooooood.', 'bbrbbbbrbbbbb.'], ox, oy + 1, pal);
+      } else {
+        b.stamp(['....oooooo....', '..oohhhooooo..', '.ohhHhhoooood.', '.ohhhhooooood.', 'brbbbbrrbbbbrb'], ox, oy + 1, pal);
+        if (v === 'down') {
+          for (let cy = 6; cy <= 10; cy++) {
+            put(6, cy, cy === 6 ? it.dd : it.dk);
+            put(7, cy, cy === 6 ? it.dd : it.base);
+          }
+        }
+      }
+      break;
+    }
+    case 'circlet': {
+      // Diadema dourado na testa, com a pedra no meio (de costas, só o aro).
+      const band = it.base;
+      if (v === 'down') {
+        for (let cx = 1; cx <= 12; cx++) put(cx, 6, cx < 5 ? it.lt : band);
+        put(6, 5, it.lt);
+        put(7, 5, band);
+        put(6, 6, '#c8414b');
+        put(7, 6, '#9e2f3c');
+      } else if (v === 'side') {
+        for (let cx = 1; cx <= 9; cx++) put(cx, 6, cx < 4 ? it.lt : band);
+        put(1, 5, it.lt);
+      } else {
+        for (let cx = 1; cx <= 12; cx++) put(cx, 6, it.dk);
+      }
+      break;
+    }
+    case 'hood': {
+      // Capuz: cobre o cabelo e emoldura o rosto, caindo até os ombros.
+      const pal = { o: it.base, h: it.lt, H: it.hi, d: it.dk, D: it.dd };
+      if (v === 'down') {
+        b.stamp(
+          ['...oooooooo...', '.oohhhhoooooo.', 'ohhHhhooooood', 'ohhoooooooood', 'oh..........od', 'oh..........od', 'oh..........dd', 'oh..........dD', 'od..........dD', 'od..........dD', 'dd..........DD', 'dD..........DD'],
+          ox,
+          oy,
+          pal,
+        );
+      } else if (v === 'side') {
+        b.stamp(
+          ['....ooooooo...', '..oohhhooooo..', '.ohhHhooooood.', '.ohhooooooood.', '......oooood.', '......oooodd.', '.......oooddD', '.......ooddDD', '.......odddDD', '........ddDDD', '........dDDD.', '........DDD..'],
+          ox,
+          oy,
+          pal,
+        );
+      } else {
+        b.stamp(
+          ['...oooooooo...', '.oohhhhoooooo.', 'ohhHhhooooood', 'ohhhoooooooood', 'ohhooooooooood', 'ohooooooooood', 'ooooooooooodd', 'ooooooooooodD', 'oooooooooodDD', 'dooooooooddDD', 'ddooooodddDDD', 'dddddddddDDDD'],
+          ox,
+          oy,
+          pal,
+        );
+      }
+      break;
+    }
     case 'none':
       break;
   }

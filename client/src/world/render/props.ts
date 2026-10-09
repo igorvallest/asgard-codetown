@@ -330,6 +330,7 @@ export function propSprite(prop: ExteriorProp): PropSprite {
       s = treeSprite(prop.seed % 7);
       break;
     case 'pine':
+    case 'snowpine':
       s = pineSprite(prop.seed % 7);
       break;
     case 'bush':
@@ -348,6 +349,8 @@ export function propSprite(prop: ExteriorProp): PropSprite {
       s = benchSprite();
       break;
     case 'rock':
+    case 'boulder':
+    case 'runestone':
       s = rockSprite(prop.seed % 7);
       break;
     case 'parasol':

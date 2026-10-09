@@ -15,15 +15,15 @@
 import { TILE } from '../../art/api';
 import type { WallStyle } from '../../art/api';
 import { mulberry32 } from '../../../../shared/hash';
-import { COL_W, CORRIDOR_H, EXT_EAST, EXT_NORTH, EXT_SOUTH, EXT_WEST, ROOM_H } from '../constants';
+import { COL_W, CORRIDOR_H, EXT_NORTH, EXT_SOUTH, ROOM_H } from '../constants';
 import { WalkGrid } from '../path/grid';
-import { AreaBuilder, SEATED_SORT_BIAS } from './builder';
+import { AreaBuilder, SEAT_FOOT_DY, SEATED_SORT_BIAS } from './builder';
 import { paintArea, type BuildingLayout } from './building';
 import { layoutCafe } from './core';
 import type { ExteriorLayout, SlotShell } from './exterior';
 import type { Side } from './geometry';
 import type { BuildingPlan } from './plan';
-import { layoutProjectRoom } from './room';
+import { layoutAsgardRoom } from './asgard-room';
 import type { AreaLayout, ExteriorProp, FloorPatch, TileRect } from './types';
 
 export const THRONE_ID = 'asgard:trono';
@@ -53,6 +53,9 @@ const ROAD_ID = 'asgard:rua';
 
 /** Centros (tiles locais) dos dois feixes da Bifrost na parede norte do trono. */
 const BIFROST_CX = [2.5, 5.5] as const;
+/** Trono (2x1, tiles locais da sala do trono). */
+const THRONE_LX = 7;
+const THRONE_LY = 2;
 
 const WALLS = {
   throne: { base: '#8f8a83', trim: '#5e564c', pattern: 'brick' } satisfies WallStyle,
@@ -60,8 +63,6 @@ const WALLS = {
   bath: { base: '#a7b3b5', trim: '#66757a', pattern: 'tiles' } satisfies WallStyle,
   outside: { base: '#a39a8c', trim: '#6b6152', pattern: 'brick', exterior: true } satisfies WallStyle,
 };
-
-const TALL = ['ficus', 'palm', 'monstera', 'bonsai'] as const;
 
 export function bandOf(slot: number): number {
   const s = Math.max(0, Math.floor(slot));
@@ -105,13 +106,23 @@ function layoutThrone(): AreaLayout {
     b.wall('elevator', cx, undefined, { order: 0.2 + i * 0.1 });
     b.spot('elevator', Math.floor(cx - 0.5), 2, 'up', { x: b.px(cx), y: b.py(2) + 2, group: `elevator:${i}` });
   });
-  // o trono, no alto da sala, de frente para a porta
-  b.furn('armchair', 7, 2, 'down', { order: 0.4 });
-  b.furn('floor_lamp', 9, 2, undefined, { order: 0.42 });
+  // o trono, no alto da sala, de frente para a porta (o Odin senta nele: ver `npcs` do plano), com os lobos
+  // Geri e Freki deitados aos pés e braseiros dos lados
+  b.furn('throne', THRONE_LX, THRONE_LY, undefined, { order: 0.4 });
+  b.furn('wolf', THRONE_LX - 1, THRONE_LY + 1, 'right', { order: 0.43 });
+  b.furn('wolf', THRONE_LX + 2, THRONE_LY + 1, 'left', { order: 0.44 });
+  b.furn('floor_lamp', THRONE_LX + 2, THRONE_LY, undefined, { order: 0.42 });
+  b.wall('banner', 9.5, 'gold', { order: 0.5 });
   b.wall('sign', 12, undefined, { order: 0.9 });
-  b.furn('plant_tall', 14, 4, 'ficus', { order: 0.21 });
-  b.furn('plant_tall', 1, 9, 'monstera', { order: 0.2 });
-  b.furn('plant_tall', 14, 9, 'palm', { order: 0.22 });
+  b.wall('banner', 14.5, 'red', { order: 0.51 });
+  // colunas de madeira ao longo do salão e braseiros nos cantos
+  for (const ly of [5, 8]) {
+    b.furn('pillar', 1, ly, undefined, { order: 0.2 });
+    b.furn('pillar', 14, ly, undefined, { order: 0.21 });
+  }
+  b.furn('floor_lamp', 1, 10, undefined, { order: 0.23 });
+  b.furn('floor_lamp', 14, 10, undefined, { order: 0.24 });
+  b.furn('runestone', 14, 2, undefined, { order: 0.25 });
   // banco de espera (quem ainda não tem sala fica por aqui)
   const bench = b.furn('bench', 11, 8, undefined, { order: 0.5 });
   for (let i = 0; i < 2; i++) b.seat('bench', 'bench', 11 + i, 8, 'down', undefined, { noFurniture: true, furnitureId: bench });
@@ -136,7 +147,11 @@ function layoutHall(): AreaLayout {
   b.walk(7, 0, 2, 2);
 
   b.wall('tv', 3.5, undefined, { order: 0.4 });
+  b.wall('banner', 5.75, 'blue', { order: 0.45 });
+  b.wall('banner', 10, 'green', { order: 0.46 });
   b.wall('painting', 12.25, undefined, { order: 0.5 });
+  // a fogueira do salão, no meio (quem vem do trono contorna pelos lados)
+  b.furn('hearth', 7, 7, undefined, { order: 0.48 });
   // sofá de costas para a câmera, de frente para a TV; poltronas dos lados (TV e videogame usam assentos vizinhos)
   const sofa = b.furn('sofa', 2, 6, 'up', { order: 0.5 });
   for (let i = 0; i < 3; i++) b.seat('sofa', 'sofa', 2 + i, 6, 'up', 'up', { noFurniture: true, furnitureId: sofa });
@@ -185,8 +200,8 @@ function layoutBath(): AreaLayout {
     b.furn('sink', 2 + i, 2, undefined, { order: 0.35 });
     b.spot('sink', 2 + i, 3, 'up', { dy: -3 });
   }
-  b.furn('trash_bin', 5, 2, undefined, { order: 0.4 });
-  b.furn('plant_small', 1, 2, 'fern', { order: 0.2 });
+  b.furn('barrel', 5, 2, undefined, { order: 0.4 });
+  b.furn('runestone', 1, 2, undefined, { order: 0.2 });
   b.wall('clock', 6, undefined, { order: 0.5 });
   for (let i = 0; i < 3; i++) {
     const lx = 9 + i * 2;
@@ -195,10 +210,22 @@ function layoutBath(): AreaLayout {
   }
   const bench = b.furn('bench', 3, 8, undefined, { order: 0.5 });
   for (let i = 0; i < 2; i++) b.seat('bench', 'bench', 3 + i, 8, 'down', undefined, { noFurniture: true, furnitureId: bench });
-  b.furn('plant_tall', 1, 9, 'ficus', { order: 0.21 });
-  b.furn('plant_tall', 14, 9, 'monstera', { order: 0.22 });
-  b.furn('plant_small', 14, 6, 'succulent', { order: 0.2 });
+  b.furn('floor_lamp', 1, 9, undefined, { order: 0.21 });
+  b.furn('barrel', 14, 9, undefined, { order: 0.22 });
+  b.furn('barrel', 14, 6, undefined, { order: 0.2 });
   return b.build();
+}
+
+/** Cozinha: a disposição da copa (os assentos das rodas de papo), com barris no lugar dos vasos de planta. */
+function layoutKitchen(): AreaLayout {
+  const a = layoutCafe(KITCHEN_ID, { x: 0, y: bandTop(0), w: COL_W, h: ROOM_H });
+  for (const f of a.furniture) {
+    if (f.kind === 'plant_tall' || f.kind === 'plant_small') {
+      f.kind = 'barrel';
+      f.variant = undefined;
+    }
+  }
+  return a;
 }
 
 /** Corredor da faixa `k`, da largura das salas: fechado a oeste e com a saída para a rua a leste. */
@@ -217,7 +244,12 @@ function layoutBandCorridor(k: number): AreaLayout {
     b.rug(x + 2, 1.95, COL_W - 4, 1.1, '#8a6a46', 640 + k * COLS + c);
     b.spot('talk', x + 5, 2, 'right', { group: `talk:${id}:${c}`, dx: -1 });
     b.spot('talk', x + 6, 2, 'left', { group: `talk:${id}:${c}`, dx: 1 });
-    if (c !== 1) b.furn('plant_tall', x + 13, 4, TALL[(k + c) % TALL.length], { order: 0.5 });
+    // braseiros e barris alternados; colunas de madeira onde as paredes das salas se encontram
+    if (c !== 1) b.furn((k + c) % 2 === 0 ? 'floor_lamp' : 'barrel', x + 13, 4, undefined, { order: 0.5 });
+    if (c < COLS - 1) {
+      b.furn('pillar', x + 15, 0, undefined, { order: 0.4 });
+      b.furn('pillar', x + 15, CORRIDOR_H - 1, undefined, { order: 0.41 });
+    }
   }
   return b.build();
 }
@@ -242,7 +274,7 @@ const roadCache = new Map<number, AreaLayout>();
 
 /** Trono, cozinha, salão e banheiro (calculados uma vez). */
 export function asgardFixedAreas(): AreaLayout[] {
-  return (fixedCache ??= [layoutThrone(), layoutCafe(KITCHEN_ID, { x: 0, y: bandTop(0), w: COL_W, h: ROOM_H }), layoutHall(), layoutBath()]);
+  return (fixedCache ??= [layoutThrone(), layoutKitchen(), layoutHall(), layoutBath()]);
 }
 
 function corridorAt(k: number): AreaLayout {
@@ -290,9 +322,9 @@ function emptySlot(slot: number): SlotShell {
   const shell: SlotShell = { slot, rect, side, walls, windows, floors: [], props };
   // jardim: pinheiros nas pontas, pedras e flores no meio (o lado do corredor fica livre)
   const top = side === 'north' ? 1 : 3;
-  props.push({ kind: 'pine', x: x0 + T(2) + 4, y: T(rect.y + top + 3), seed: seed(), slot });
-  props.push({ kind: rng() < 0.5 ? 'pine' : 'tree', x: x0 + T(14) - 4, y: T(rect.y + top + 4), seed: seed(), slot });
-  props.push({ kind: 'rock', x: x0 + T(6), y: T(rect.y + top + 3), seed: seed(), slot });
+  props.push({ kind: 'snowpine', x: x0 + T(2) + 4, y: T(rect.y + top + 3), seed: seed(), slot });
+  props.push({ kind: rng() < 0.5 ? 'snowpine' : 'pine', x: x0 + T(14) - 4, y: T(rect.y + top + 4), seed: seed(), slot });
+  props.push({ kind: rng() < 0.5 ? 'runestone' : 'boulder', x: x0 + T(6), y: T(rect.y + top + 3), seed: seed(), slot });
   props.push({ kind: 'bush', x: x0 + T(10), y: T(rect.y + top + 6), seed: seed(), slot });
   for (const cx of [4, 8, 12]) props.push({ kind: 'flowers', x: x0 + T(cx), y: T(rect.y + top + 1 + (cx % 3)), seed: slot * 3 + cx, slot });
   if (side === 'north') {
@@ -308,24 +340,34 @@ function emptySlot(slot: number): SlotShell {
   return shell;
 }
 
+/**
+ * Terreno de cada lado do prédio (tiles). O prédio é alto e estreito, e a visão inicial mostra muito dos lados:
+ * com a margem do Escritório, a borda do terreno aparecia na tela.
+ */
+const EXT_SIDE = 40;
+
 /** Terreno em volta do salão: gramado com pinheiros, árvores e pedras, e a rua de pedra seguindo para o sul. */
 function exteriorFor(bands: number): ExteriorLayout {
   const r = rectFor(bands);
-  const bounds: TileRect = { x: -EXT_WEST, y: -EXT_NORTH, w: r.w + EXT_WEST + EXT_EAST, h: r.h + EXT_NORTH + EXT_SOUTH };
+  const bounds: TileRect = { x: -EXT_SIDE, y: -EXT_NORTH, w: r.w + 2 * EXT_SIDE, h: r.h + EXT_NORTH + EXT_SOUTH };
   const px = (t: number) => t * TILE;
   const rng = mulberry32(0xa5ad + bands);
   const props: ExteriorProp[] = [];
   const seed = () => Math.floor(rng() * 1e9);
-  const tree = (tx: number, ty: number) => props.push({ kind: rng() < 0.6 ? 'pine' : 'tree', x: px(tx) + Math.floor(rng() * 8), y: px(ty) + Math.floor(rng() * 8), seed: seed() });
-  // faixas de árvores em volta do prédio (a rua passa livre ao sul)
+  const tree = (tx: number, ty: number) => {
+    const r = rng();
+    props.push({ kind: r < 0.62 ? 'snowpine' : r < 0.9 ? 'pine' : 'boulder', x: px(tx) + Math.floor(rng() * 8), y: px(ty) + Math.floor(rng() * 8), seed: seed() });
+  };
+  // bosque em volta do prédio: uma árvore em metade das células de 5x4 tiles (a rua passa livre ao sul)
   const onRoad = (tx: number) => tx >= ROOMS_W - 1 && tx <= ROOMS_W + ROAD_PAVED;
-  for (let tx = bounds.x + 2; tx < bounds.x + bounds.w - 1; tx += 3) {
-    tree(tx, bounds.y + 3 + Math.floor(rng() * 6));
-    if (!onRoad(tx)) tree(tx, r.h + 4 + Math.floor(rng() * (EXT_SOUTH - 6)));
-  }
-  for (let ty = 0; ty < r.h; ty += 3) {
-    tree(bounds.x + 2 + Math.floor(rng() * (EXT_WEST - 6)), ty);
-    tree(r.w + 3 + Math.floor(rng() * (EXT_EAST - 6)), ty);
+  const nearBuilding = (tx: number, ty: number) => tx >= -2 && tx < r.w + 2 && ty >= -2 && ty < r.h + 2;
+  for (let cy = bounds.y + 2; cy < bounds.y + bounds.h - 2; cy += 4) {
+    for (let cx = bounds.x + 2; cx < bounds.x + bounds.w - 2; cx += 5) {
+      const tx = cx + Math.floor(rng() * 4);
+      const ty = cy + Math.floor(rng() * 3);
+      if (rng() < 0.5 || nearBuilding(tx, ty) || (ty >= r.h && onRoad(tx))) continue;
+      tree(tx, ty);
+    }
   }
   // os dois gramados ao lado da sala do trono
   for (const [x0, x1] of [
@@ -334,12 +376,13 @@ function exteriorFor(bands: number): ExteriorLayout {
   ] as const) {
     for (let tx = x0; tx < x1; tx += 4) {
       if (rng() < 0.55) tree(tx, 2 + Math.floor(rng() * 7));
-      else props.push({ kind: rng() < 0.5 ? 'rock' : 'bush', x: px(tx) + 4, y: px(4 + Math.floor(rng() * 6)), seed: seed() });
+      else props.push({ kind: rng() < 0.5 ? 'runestone' : 'boulder', x: px(tx) + 4, y: px(4 + Math.floor(rng() * 6)), seed: seed() });
     }
   }
   const floors: FloorPatch[] = [{ kind: 'grass', x: px(bounds.x), y: px(bounds.y), w: px(bounds.w), h: px(bounds.h), seed: 21 }];
-  // a rua continua da saída do último corredor até o fim do terreno, ao sul
-  const { y1 } = roadSpan(bands);
+  // a rua continua da saída do último corredor até o fim do terreno, ao sul, marcada por pedras rúnicas
+  const { y0, y1 } = roadSpan(bands);
+  for (let ty = y0 + 3; ty < bounds.y + bounds.h - 2; ty += 7) props.push({ kind: 'runestone', x: px(ROOMS_W + ROAD_PAVED) + 10, y: px(ty), seed: seed() });
   floors.push({ kind: 'sidewalk', x: px(ROOMS_W), y: px(y1), w: px(ROAD_PAVED), h: px(bounds.y + bounds.h - y1), seed: 681 });
   return { bounds, floors, props, lanes: [], streetY: 0, streetH: 0 };
 }
@@ -354,7 +397,7 @@ export const asgardPlan: BuildingPlan = {
   },
   rectFor,
   assemble,
-  room: (input, theme) => layoutProjectRoom(input, theme, asgardCell(input.slot)),
+  room: (input, theme) => layoutAsgardRoom(input, theme, asgardCell(input.slot)),
   outside(bands) {
     const n = Math.max(1, bands);
     const shells: SlotShell[] = [];
@@ -372,6 +415,19 @@ export const asgardPlan: BuildingPlan = {
     brandName: 'Asgard',
     names: { [THRONE_ID]: 'Trono de Odin', [KITCHEN_ID]: 'Cozinha', [HALL_ID]: 'Salão', [BATH_ID]: 'Banheiro' },
   },
+  // o Odin de verdade, sentado no trono (as sessões `claude --agent odin` são hologramas dele)
+  npcs: [
+    {
+      id: 'odin',
+      agent: 'odin:trono',
+      seed: 1,
+      x: (COL_W + THRONE_LX + 1) * TILE,
+      y: (THRONE_LY + 1) * TILE - SEAT_FOOT_DY,
+      sortY: (THRONE_LY + 1) * TILE + SEATED_SORT_BIAS,
+      dir: 'down',
+      pose: 'sit',
+    },
+  ],
   bucketOf(tx, ty) {
     if (ty < ROOM_H) return 'trono';
     const k = Math.floor((ty - ROOM_H) / BAND_H);

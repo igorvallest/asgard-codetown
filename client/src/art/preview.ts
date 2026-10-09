@@ -2,7 +2,8 @@
 // o que o módulo desenha — personagens, poses, itens, móveis, pisos, paredes, telas, quadro,
 // janela, relógio, ícones, temas e avatares — além de uma cena de exemplo para checar a coesão.
 import '@fontsource/pixelify-sans/400.css';
-import * as art from './index';
+import { THEMES } from '../theme';
+import * as officeArt from './index';
 import { pixelText, pixelTextWidth } from './pixelfont';
 import {
   FURNITURE,
@@ -18,6 +19,10 @@ import {
   type WallPattern,
   type WallStyle,
 } from './api';
+
+// ?tema=<id> mostra a arte desse tema; o que ele não redesenha continua sendo a do Escritório.
+const themeArt = THEMES.find((t) => t.id === new URLSearchParams(location.search).get('tema'))?.art;
+const art = { ...officeArt, ...themeArt };
 
 const SCALE = 3;
 const DIRS: readonly Dir[] = ['down', 'left', 'up', 'right'];

@@ -1,8 +1,9 @@
 // Peças visuais reutilizadas pelos painéis: chip de conta (e o selo "Codex"), ponto de status, selo de papel, barra
 // de progresso.
 import type { AccountInfo, Activity, AgentInfo, AgentStatus, Provider } from '../../../shared/types';
+import { activeTheme } from '../theme';
 import { h, setAttr, setHidden, setStyleVar, setText, setTitle, setVariant } from './dom';
-import { WORDMARK } from './icons';
+import { FALLBACK_MARK, WORDMARK } from './icons';
 import { shellDoneKind, shellLine, shellStage, statusLabel, type ShellWait } from './model';
 import { accountChipLabel, accountProvider, fallbackShort, showsProviderTag } from './provider';
 
@@ -131,7 +132,24 @@ export function updateShellActivityLine(el: HTMLElement, wait: ShellWait, now: n
 /** Nome do produto como logotipo em pixels (o texto fica para leitores de tela). */
 export function wordmark(cls = 'ui-brand__name'): HTMLElement {
   const el = h('span', { class: cls });
-  el.innerHTML = WORDMARK;
-  el.append(h('span', { class: 'ui-sr', text: 'Habblaud' }));
+  const brand = activeTheme().brand;
+  el.innerHTML = brand?.wordmark ?? WORDMARK;
+  el.append(h('span', { class: 'ui-sr', text: brand?.name ?? 'Habblaud' }));
   return el;
+}
+
+/** Marca (ícone) do tema ou, sem ela, o logotipo do projeto (com o prédio em pixels se a imagem faltar). */
+export function brandMark(size: number, src = '/assets/brand/logo-mark@4x.png', srcset?: string): HTMLElement {
+  const mark = h('span', { class: 'ui-brand__mark' });
+  const brand = activeTheme().brand;
+  if (brand) {
+    mark.innerHTML = brand.mark;
+    return mark;
+  }
+  const img = h('img', { attrs: { src, ...(srcset ? { srcset } : {}), alt: '', width: size, height: size, draggable: 'false' } });
+  img.addEventListener('error', () => {
+    mark.innerHTML = FALLBACK_MARK;
+  });
+  mark.append(img);
+  return mark;
 }
