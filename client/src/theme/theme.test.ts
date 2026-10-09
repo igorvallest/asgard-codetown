@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { THEME_IDS } from '../../../shared/theme';
 import type { ArtModule } from '../art/api';
 import { officePlan } from '../world/layout/plan';
 import { applyThemeUi, DEFAULT_THEME_ID, extendTheme, resolveTheme, THEMES, type Theme } from './index';
@@ -16,6 +17,8 @@ describe('temas', () => {
   it('o Escritório é o padrão e traz a arte inteira', () => {
     expect(DEFAULT_THEME_ID).toBe('escritorio');
     expect(THEMES[0].id).toBe('escritorio');
+    // os mesmos ids que o servidor aceita em HABBLAUD_TEMA
+    expect(THEMES.map((t) => t.id)).toEqual([...THEME_IDS]);
     expect(typeof THEMES[0].art.furnitureSprites).toBe('function');
     expect(typeof THEMES[0].art.avatarCanvas).toBe('function');
   });

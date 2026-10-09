@@ -2,7 +2,7 @@
 import type { WallStyle } from '../../art/api';
 import { COL_W, NORTH_Y, ROOM_H, SOUTH_Y, TILE } from '../constants';
 import { AreaBuilder, SEATED_SORT_BIAS } from './builder';
-import type { AreaLayout } from './types';
+import type { AreaLayout, TileRect } from './types';
 
 export const RECEPTION_ID = 'core:recepcao';
 export const RESTROOM_ID = 'core:banheiros';
@@ -115,8 +115,12 @@ export function layoutRestroom(): AreaLayout {
   return b.build();
 }
 
-export function layoutCafe(): AreaLayout {
-  const b = new AreaBuilder(CAFE_ID, 'cafe', { x: COL_W, y: NORTH_Y, w: COL_W, h: ROOM_H });
+/**
+ * Copa ao norte do corredor (aberta para ele com vidro). `id` e `rect` deixam outro plano de prédio usar a mesma
+ * disposição: as rodas de papo dependem do espaçamento destes assentos (social.ts).
+ */
+export function layoutCafe(id = CAFE_ID, rect: TileRect = { x: COL_W, y: NORTH_Y, w: COL_W, h: ROOM_H }): AreaLayout {
+  const b = new AreaBuilder(id, 'cafe', rect);
   const wall = CORE_WALLS.cafe;
   b.floor('tile_check', 0, 0, 16, 12, 301);
   // frontão de mármore atrás da bancada + parede clara com janelas
@@ -180,8 +184,9 @@ export function layoutCafe(): AreaLayout {
   // aberta para o corredor com vidro
   for (const lx of [1, 2, 3, 4, 5, 10, 11, 12, 13, 14]) b.furn('glass_partition', lx, 11, 'h', { order: 0.15 });
   b.walk(1, 2, 14, 10);
-  b.spot('talk', 7, 9, 'right', { group: 'talk:copa', dx: -1 });
-  b.spot('talk', 8, 9, 'left', { group: 'talk:copa', dx: 1 });
+  const talk = id === CAFE_ID ? 'talk:copa' : `talk:${id}`;
+  b.spot('talk', 7, 9, 'right', { group: talk, dx: -1 });
+  b.spot('talk', 8, 9, 'left', { group: talk, dx: 1 });
   b.area.shade = undefined;
   return b.build();
 }
